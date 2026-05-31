@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>LexCalendar</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── THEMES ── */
+:root{
+  --bg:#f7f8fa;
+  --bg2:#ffffff;
+  --bg3:#f0f2f5;
+  --bg4:#e8ebf0;
+  --sidebar:#0f2744;
+  --sidebar2:#1a3a5c;
+  --sidebar-txt:rgba(255,255,255,0.7);
+  --sidebar-txt-act:#ffffff;
+  --sidebar-act:rgba(255,255,255,0.12);
+  --acc:#185FA5;
+  --acc2:#0f4880;
+  --acc-s:#e8f1fb;
+  --acc-t:#185FA5;
+  --txt:#0d1b2a;
+  --txt2:#4a5568;
+  --txt3:#8a99aa;
+  --brd:#e2e8f0;
+  --brd2:#c8d4e0;
+  --red:#c53030;--red-s:#fff5f5;--red-t:#9b1c1c;
+  --amber:#b45309;--amber-s:#fffbeb;--amber-t:#92400e;
+  --green:#276749;--green-s:#f0fff4;--green-t:#1c4532;
+  --sh:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+  --sh-md:0 4px 16px rgba(0,0,0,0.08);
+  --r:8px;--rl:12px;
+}
+.th-dark{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#1c2330;--bg4:#252d3d;
+  --sidebar:#090d12;--sidebar2:#111620;
+  --acc:#4a90d9;--acc2:#2d6db5;--acc-s:#1a2d45;--acc-t:#6aabf7;
+  --txt:#e6edf3;--txt2:#8b949e;--txt3:#6e7681;
+  --brd:#30363d;--brd2:#444c56;
+  --sh:0 1px 3px rgba(0,0,0,0.3);
+}
+.th-warm{
+  --bg:#faf8f5;--bg2:#ffffff;--bg3:#f5f0e8;--bg4:#ede5d8;
+  --sidebar:#2c1810;--sidebar2:#3d2418;
+  --acc:#b45309;--acc2:#92400e;--acc-s:#fffbeb;--acc-t:#92400e;
+  --txt:#1c1008;--txt2:#57422e;--txt3:#8a7060;
+  --brd:#e8ddd0;--brd2:#d4c4b0;
+}
+.th-slate{
+  --bg:#f8fafc;--bg2:#ffffff;--bg3:#f1f5f9;--bg4:#e2e8f0;
+  --sidebar:#1e293b;--sidebar2:#334155;
+  --acc:#4f46e5;--acc2:#3730a3;--acc-s:#eef2ff;--acc-t:#4338ca;
+  --txt:#0f172a;--txt2:#475569;--txt3:#94a3b8;
+  --brd:#e2e8f0;--brd2:#cbd5e1;
+}
+/* ── RESET ── */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--txt);direction:rtl;font-size:14px;line-height:1.5;min-height:100vh;}
+body.en{direction:ltr;}
+a{text-decoration:none;}
+button{cursor:pointer;font-family:'Heebo',sans-serif;}
+/* ── LAYOUT ── */
+.app{display:flex;min-height:100vh;}
+/* ── SIDEBAR ── */
+.sidebar{width:220px;background:var(--sidebar);display:flex;flex-direction:column;position:fixed;top:0;right:0;bottom:0;z-index:100;flex-shrink:0;}
+body.en .sidebar{right:auto;left:0;}
+.sb-logo{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,0.08);}
+.sb-logo-row{display:flex;align-items:center;gap:10px;}
+.sb-logo-mark{width:34px;height:34px;background:var(--acc);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.sb-logo-name{font-size:15px;font-weight:700;color:#fff;letter-spacing:-0.3px;}
+.sb-logo-sub{font-size:10px;color:var(--sidebar-txt);margin-top:2px;}
+.sb-nav{flex:1;padding:10px 0;overflow-y:auto;}
+.sb-section{font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:0.1em;text-transform:uppercase;padding:12px 16px 6px;}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 16px;color:var(--sidebar-txt);font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;border:none;background:none;width:100%;text-align:right;border-radius:0;}
+body.en .sb-item{text-align:left;}
+.sb-item:hover{color:#fff;background:var(--sidebar-act);}
+.sb-item.on{color:var(--sidebar-txt-act);background:var(--sidebar-act);}
+.sb-item.on .sb-item-icon{opacity:1;}
+.sb-item-icon{font-size:15px;opacity:0.7;flex-shrink:0;}
+.sb-item-label{flex:1;}
+.sb-item-badge{background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;}
+.sb-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.08);}
+.sb-user{display:flex;align-items:center;gap:8px;}
+.sb-avatar{width:30px;height:30px;background:var(--acc);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;}
+.sb-user-info{flex:1;min-width:0;}
+.sb-user-name{font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sb-user-role{font-size:10px;color:var(--sidebar-txt);}
+/* ── MAIN ── */
+.main{flex:1;margin-right:220px;display:flex;flex-direction:column;min-height:100vh;}
+body.en .main{margin-right:0;margin-left:220px;}
+/* ── TOPBAR ── */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--brd);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.topbar-title{font-size:15px;font-weight:600;color:var(--txt);}
+.topbar-actions{display:flex;gap:8px;align-items:center;}
+.ib{background:none;border:1px solid var(--brd);border-radius:var(--r);padding:0 10px;height:34px;display:inline-flex;align-items:center;gap:6px;color:var(--txt2);font-size:13px;font-weight:500;transition:all 0.15s;}
+.ib:hover{background:var(--bg3);border-color:var(--brd2);}
+.ib-icon{font-size:14px;}
+.tb-btn{background:var(--acc);color:#fff;border:none;border-radius:var(--r);padding:0 14px;height:34px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;}
+.tb-btn:hover{background:var(--acc2);}
+/* ── PAGE ── */
+.page{display:none;flex:1;padding:24px;flex-direction:column;}
+.page.on{display:flex;}
+/* ── STAT CARDS ── */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.stat-card{background:var(--bg2);border:1px solid var(--brd);border-radius:var(--rl);padding:16px 18px;box-shadow:var(--sh);}
+.stat-label{font-size:11px;font-weight:600;color:var(--txt3);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.stat-num{font-size:28px;font-weight:700;color:var(--txt);line-height:1;}
+.stat-sub{font-size:11px;color:var(--txt3);margin-top:4px;}
+/* ── CARDS ── */
+.card{background:var(--bg2);border:1px solid var(--brd);border-radius:var(--rl);box-shadow:var(--sh);margin-bottom:16px;}
+.card-hd{padding:14px 18px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;}
+.card-hd-t{font-size:13px;font-weight:600;color:var(--txt);display:flex;align-items:center;gap:8px;}
+.card-body{padding:0;}
+/* ── TABLE ── */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{padding:10px 16px;text-align:right;font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:0.05em;text-transform:uppercase;background:var(--bg3);border-bottom:1px solid var(--brd);}
+body.en .tbl th{text-align:left;}
+.tbl td{padding:11px 16px;border-bottom:1px solid var(--brd);font-size:13px;color:var(--txt);vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:var(--bg3);}
+.tbl-name{font-weight:600;}
+.tbl-sub{font-size:11px;color:var(--txt3);margin-top:2px;}
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600;}
+.b-red{background:var(--red-s);color:var(--red-t);}
+.b-amber{background:var(--amber-s);color:var(--amber-t);}
+.b-green{background:var(--green-s);color:var(--green-t);}
+.b-blue{background:var(--acc-s);color:var(--acc-t);}
+.b-gray{background:var(--bg3);color:var(--txt3);}
+/* ── ALERT ROWS ── */
+.alert-row{display:flex;align-items:flex-start;gap:12px;padding:12px 18px;border-bottom:1px solid var(--brd);}
+.alert-row:last-child{border-bottom:none;}
+.alert-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.alert-body{flex:1;}
+.alert-title{font-size:13px;font-weight:600;color:var(--txt);}
+.alert-sub{font-size:11px;color:var(--txt3);margin-top:2px;}
+/* ── LAW ITEMS ── */
+.law-item{padding:14px 18px;border-bottom:1px solid var(--brd);display:flex;justify-content:space-between;align-items:flex-start;gap:16px;}
+.law-item:last-child{border-bottom:none;}
+.law-name{font-size:13px;font-weight:600;color:var(--txt);}
+.law-ref{font-size:11px;color:var(--acc);font-weight:500;margin-top:3px;}
+.law-desc{font-size:12px;color:var(--txt2);margin-top:5px;line-height:1.6;}
+.law-days-box{text-align:center;min-width:48px;flex-shrink:0;}
+.law-days-num{font-size:22px;font-weight:700;color:var(--acc);}
+.law-days-lbl{font-size:10px;color:var(--txt3);font-weight:500;}
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:var(--r);font-family:'Heebo',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--brd2);background:var(--bg2);color:var(--txt);transition:all 0.15s;min-height:38px;}
+.btn:hover{background:var(--bg3);}
+.btn-full{width:100%;justify-content:center;}
+.btn-primary{background:var(--acc);color:#fff;border-color:var(--acc);}
+.btn-primary:hover{background:var(--acc2);}
+.btn-danger{background:var(--red-s);color:var(--red-t);border-color:var(--red);}
+.btn-sm{padding:5px 12px;font-size:12px;min-height:30px;}
+/* ── FORMS ── */
+.fg{margin-bottom:14px;}
+.fl{font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:5px;display:block;}
+input,select,textarea{width:100%;background:var(--bg3);border:1px solid var(--brd2);border-radius:var(--r);padding:9px 12px;color:var(--txt);font-family:'Heebo',sans-serif;font-size:13px;direction:inherit;transition:border-color 0.15s,background 0.15s;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc);background:var(--bg2);}
+select option{background:var(--bg2);}
+textarea{resize:vertical;min-height:60px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+/* ── FILTER BAR ── */
+.fbar{display:flex;gap:6px;margin-bottom:16px;}
+.fbtn{background:var(--bg2);border:1px solid var(--brd);border-radius:99px;padding:5px 14px;font-size:12px;font-weight:500;color:var(--txt2);cursor:pointer;white-space:nowrap;transition:all 0.15s;font-family:'Heebo',sans-serif;}
+.fbtn:hover{border-color:var(--brd2);}
+.fbtn.on{background:var(--acc);color:#fff;border-color:var(--acc);}
+/* ── CALENDAR ── */
+.cal-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--brd);}
+.cal-month-lbl{font-size:14px;font-weight:700;color:var(--txt);}
+.cal-nav{display:flex;gap:4px;}
+.cal-nav-btn{width:28px;height:28px;border:1px solid var(--brd);border-radius:6px;background:none;color:var(--txt2);font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.cal-nav-btn:hover{background:var(--bg3);}
+.cal-grid-wrap{padding:14px 18px;}
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px;}
+.cal-day-lbl{font-size:11px;font-weight:700;color:var(--txt3);text-align:center;padding:4px;}
+.cal-cells{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.cal-cell{min-height:52px;border-radius:6px;padding:4px;cursor:pointer;border:1px solid transparent;transition:all 0.1s;}
+.cal-cell:hover{background:var(--bg3);border-color:var(--brd);}
+.cal-cell.today{background:var(--acc);border-color:var(--acc);}
+.cal-cell.today .cal-num{color:#fff;font-weight:700;}
+.cal-cell.has-ev{border-color:var(--brd);}
+.cal-num{font-size:11px;color:var(--txt3);text-align:center;margin-bottom:3px;}
+.cal-dots{display:flex;justify-content:center;gap:2px;flex-wrap:wrap;}
+.cal-dot{width:5px;height:5px;border-radius:50%;background:var(--acc);}
+.cal-dot.r{background:var(--red);}
+.cal-dot.a{background:var(--amber);}
+/* ── CHART ── */
+.chart-wrap{padding:16px 18px;}
+.chart-bars{display:flex;align-items:flex-end;gap:4px;height:72px;}
+.chart-bar{flex:1;border-radius:3px 3px 0 0;background:var(--bg4);min-height:3px;}
+.chart-bar.cur{background:var(--acc);}
+.chart-xl{display:flex;gap:4px;margin-top:5px;}
+.chart-xl span{flex:1;font-size:9px;color:var(--txt3);text-align:center;}
+/* ── TOGGLES ── */
+.tog-row{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--brd);}
+.tog-row:last-child{border-bottom:none;}
+.tog-lbl{font-size:13px;font-weight:500;color:var(--txt);}
+.tog{width:40px;height:22px;background:var(--bg4);border:1px solid var(--brd2);border-radius:11px;position:relative;cursor:pointer;transition:all 0.2s;flex-shrink:0;}
+.tog.on{background:var(--acc);border-color:var(--acc);}
+.tog-k{position:absolute;top:2px;right:2px;width:16px;height:16px;background:#fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,0.15);transition:all 0.2s;}
+.tog.on .tog-k{right:auto;left:2px;}
+/* ── SETTINGS ROWS ── */
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--brd);cursor:pointer;transition:background 0.1s;}
+.set-row:last-child{border-bottom:none;}
+.set-row:hover{background:var(--bg3);}
+.set-lbl{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500;color:var(--txt);}
+.set-icon{font-size:16px;width:22px;text-align:center;}
+.set-right{display:flex;align-items:center;gap:8px;}
+.set-val{font-size:12px;color:var(--txt3);}
+.set-arr{color:var(--txt3);font-size:14px;}
+/* ── THEME PICKER ── */
+.theme-row{display:flex;align-items:center;gap:14px;padding:13px 18px;border-bottom:1px solid var(--brd);cursor:pointer;transition:background 0.1s;}
+.theme-row:last-child{border-bottom:none;}
+.theme-row:hover{background:var(--bg3);}
+.theme-row.on{background:var(--acc-s);}
+.theme-swatch{width:26px;height:26px;border-radius:50%;flex-shrink:0;border:2px solid rgba(0,0,0,0.1);}
+.theme-name{flex:1;font-size:13px;font-weight:500;color:var(--txt);}
+.theme-chk{color:var(--acc);font-weight:700;}
+/* ── MODAL ── */
+.mo{position:fixed;inset:0;background:rgba(10,20,40,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;}
+.mo-box{background:var(--bg2);border-radius:var(--rl);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:var(--sh-md);}
+.mo-hd{padding:16px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;}
+.mo-title{font-size:15px;font-weight:700;color:var(--txt);}
+.mo-close{background:none;border:none;color:var(--txt3);font-size:18px;cursor:pointer;padding:2px 6px;}
+.mo-close:hover{color:var(--txt);}
+.mo-body{padding:20px;}
+.mo-footer{padding:14px 20px;border-top:1px solid var(--brd);display:flex;gap:8px;justify-content:flex-end;}
+body.en .mo-footer{justify-content:flex-start;}
+/* ── GUIDE ── */
+#gw{display:none;position:fixed;inset:0;background:rgba(10,20,40,0.6);z-index:9999;align-items:center;justify-content:center;padding:16px;}
+#gw.on{display:flex;}
+.g-box{background:var(--bg2);border-radius:var(--rl);width:100%;max-width:440px;box-shadow:var(--sh-md);overflow:hidden;}
+.g-hd{background:var(--sidebar);padding:28px 28px 24px;text-align:center;}
+.g-icon{font-size:48px;margin-bottom:12px;}
+.g-title{font-size:20px;font-weight:700;color:#fff;}
+.g-body{padding:20px 28px 24px;}
+.g-desc{font-size:14px;color:var(--txt2);line-height:1.7;text-align:center;}
+.g-dots{display:flex;justify-content:center;gap:6px;margin:18px 0;}
+.g-dot{width:7px;height:7px;border-radius:50%;background:var(--bg4);transition:background 0.2s;}
+.g-dot.on{background:var(--acc);}
+.g-btns{display:flex;gap:10px;}
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;right:50%;transform:translateX(50%);background:var(--txt);color:var(--bg2);padding:10px 22px;border-radius:22px;font-size:13px;font-weight:500;z-index:99999;display:none;box-shadow:var(--sh-md);}
+body.en #toast{right:auto;left:50%;transform:translateX(-50%);}
+/* ── EMPTY ── */
+.empty{text-align:center;padding:40px 20px;color:var(--txt3);}
+.empty-icon{font-size:36px;display:block;margin-bottom:10px;}
+.empty-t{font-size:14px;font-weight:500;color:var(--txt2);margin-bottom:5px;}
+/* ── ABOUT ── */
+.about-hero{background:var(--sidebar);border-radius:var(--rl);padding:28px;text-align:center;margin-bottom:16px;}
+.about-mark{width:60px;height:60px;background:var(--acc);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 14px;}
+.about-appname{font-size:22px;font-weight:700;color:#fff;}
+.about-ver{font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px;}
+/* ── APPNEST BADGE ── */
+.an-badge{background:rgba(24,95,165,0.06);border:1px solid rgba(24,95,165,0.15);border-radius:var(--r);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;margin-top:4px;}
+/* ── RESPONSIVE MOBILE ── */
+@media(max-width:720px){
+  .sidebar{width:100%;height:auto;position:relative;flex-direction:row;flex-wrap:wrap;}
+  .sb-logo{padding:12px 16px;flex:1;}
+  .sb-nav{display:flex;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;padding:6px 0;width:100%;order:3;border-top:1px solid rgba(255,255,255,0.08);}
+  .sb-section{display:none;}
+  .sb-item{padding:8px 12px;white-space:nowrap;flex-shrink:0;}
+  .sb-item-badge{display:none;}
+  .sb-footer{display:none;}
+  .app{flex-direction:column;}
+  .main{margin-right:0 !important;margin-left:0 !important;}
+  .stat-row{grid-template-columns:1fr 1fr;}
+  .form-grid{grid-template-columns:1fr;}
+  .page{padding:16px;}
+  .topbar{padding:0 16px;}
+}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+<div id="gw"><div class="g-box" id="gb"></div></div>
+
+<div class="app">
+  <!-- ══ SIDEBAR ══ -->
+  <div class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-row">
+        <div class="sb-logo-mark">⚖️</div>
+        <div>
+          <div class="sb-logo-name">LexCalendar</div>
+          <div class="sb-logo-sub" id="sb-sub"></div>
+        </div>
+      </div>
+    </div>
+    <nav class="sb-nav" id="sb-nav"></nav>
+    <div class="sb-footer">
+      <div class="sb-user">
+        <div class="sb-avatar" id="sb-avatar">?</div>
+        <div class="sb-user-info">
+          <div class="sb-user-name" id="sb-uname-disp"></div>
+          <div class="sb-user-role" id="sb-role"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MAIN ══ -->
+  <div class="main">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <span class="topbar-title" id="tb-title"></span>
+      <div class="topbar-actions">
+        <button class="ib" onclick="toggleLang()"><span class="ib-icon">🌐</span><span id="tb-lang-lbl"></span></button>
+        <button class="ib" onclick="go('pg-design')"><span class="ib-icon">🎨</span></button>
+        <button class="ib" onclick="shareApp()"><span class="ib-icon">📣</span></button>
+        <button class="tb-btn" id="tb-action-btn" onclick="openNewCase()"></button>
+      </div>
+    </div>
+
+    <!-- ══ DASHBOARD ══ -->
+    <div class="page on" id="pg-dashboard">
+      <div class="stat-row" id="dash-stats"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <div class="card" id="dash-urgent-card"></div>
+          <div class="card" id="dash-timeline-card"></div>
+        </div>
+        <div>
+          <div class="card" id="dash-cases-card"></div>
+          <div class="card" id="dash-alerts-card"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ CASES ══ -->
+    <div class="page" id="pg-cases">
+      <div class="card" id="cases-card"></div>
+    </div>
+
+    <!-- ══ DEADLINES ══ -->
+    <div class="page" id="pg-dl">
+      <div class="fbar" id="dl-fbar"></div>
+      <div class="card" id="dl-card"></div>
+    </div>
+
+    <!-- ══ CALENDAR ══ -->
+    <div class="page" id="pg-cal">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="card" id="cal-main-card"></div>
+        <div class="card" id="cal-list-card"></div>
+      </div>
+    </div>
+
+    <!-- ══ LAWS ══ -->
+    <div class="page" id="pg-laws">
+      <div class="card" id="laws-card"></div>
+    </div>
+
+    <!-- ══ ALERTS ══ -->
+    <div class="page" id="pg-alerts">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="card" id="alert-cfg-card"></div>
+        <div class="card" id="alert-list-card"></div>
+      </div>
+    </div>
+
+    <!-- ══ REPORTS ══ -->
+    <div class="page" id="pg-rep">
+      <div class="fbar" id="rep-fbar"></div>
+      <div class="stat-row" id="rep-stats"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="card" id="rep-chart-card"></div>
+        <div class="card" id="rep-list-card"></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button class="btn btn-primary" id="btn-pdf" onclick="exportPDF()"></button>
+        <button class="btn" id="btn-csv" onclick="exportCSV()"></button>
+      </div>
+    </div>
+
+    <!-- ══ SETTINGS ══ -->
+    <div class="page" id="pg-set">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <div class="card" style="padding:16px;margin-bottom:16px;">
+            <label class="fl" id="lbl-uname"></label>
+            <div style="display:flex;gap:8px;">
+              <input type="text" id="inp-uname" style="margin-bottom:0;">
+              <button class="btn btn-primary btn-sm" style="flex-shrink:0;" onclick="saveUsername()">✓</button>
+            </div>
+          </div>
+          <div class="card" id="set-rows"></div>
+        </div>
+        <div>
+          <div class="card" id="set-integrations"></div>
+          <button class="btn btn-danger btn-full" id="btn-delall" onclick="confirmDelAll()" style="margin-top:12px;"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ DESIGN ══ -->
+    <div class="page" id="pg-design">
+      <div style="max-width:400px;">
+        <div class="card" id="theme-list"></div>
+      </div>
+    </div>
+
+    <!-- ══ ABOUT ══ -->
+    <div class="page" id="pg-about">
+      <div style="max-width:440px;">
+        <div class="about-hero">
+          <div class="about-mark">⚖️</div>
+          <div class="about-appname">LexCalendar</div>
+          <div class="about-ver" id="ab-ver"></div>
+        </div>
+        <div class="card" style="padding:18px;margin-bottom:12px;">
+          <p id="ab-desc" style="font-size:13px;color:var(--txt2);line-height:1.7;margin-bottom:14px;"></p>
+          <div style="height:1px;background:var(--brd);margin:12px 0;"></div>
+          <div style="font-size:12px;color:var(--txt3);">Developed by <strong style="color:var(--acc);">Barak Aflalo</strong></div>
+          <div style="font-size:12px;color:var(--txt3);margin-top:3px;">© AppNest 2026</div>
+          <a href="https://barakaflalo.github.io/appnest" target="_blank" style="display:inline-block;margin-top:10px;font-size:13px;font-weight:500;color:var(--acc);">🏠 AppNest ›</a>
+        </div>
+        <a href="https://barakaflalo.github.io/appnest" target="_blank" style="text-decoration:none;">
+          <div class="an-badge">
+            <span style="font-size:13px;font-weight:600;color:var(--acc);">🏠 AppNest</span>
+            <span style="font-size:11px;color:var(--txt3);">More free apps ›</span>
+          </div>
+        </a>
+        <div style="margin-top:12px;">
+          <button class="btn btn-primary btn-sm" onclick="shareApp()" id="btn-ab-share"></button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+/* ══ STATE ══ */
+var APP = 'lxc';
+var VER = '1.0.0';
+var lang = 'he';
+var theme = 'default';
+var uname = '';
+var a7 = true, a3 = true, a1 = true;
+var calY = 0, calM = 0;
+var dlF = 'week', repF = 'month';
+var curPage = 'pg-dashboard';
+
+var LAWS = [
+  {id:'l1',days:30,ref:'תקנה 214ד',he:'כתב הגנה — סדר דין מהיר',en:'Defense — Fast Track',dh:'30 יום מהמצאת כתב התביעה',de:'30 days from service of claim'},
+  {id:'l2',days:60,ref:'תקנה 51',he:'כתב הגנה — סדר דין רגיל',en:'Defense — Regular Track',dh:'60 יום מהמצאת כתב התביעה',de:'60 days from service of claim'},
+  {id:'l3',days:45,ref:'תקנה 400',he:'ערעור על פסק דין',en:'Appeal on Judgment',dh:'45 יום מיום מתן פסק הדין',de:'45 days from date of judgment'},
+  {id:'l4',days:10,ref:'תקנה 369',he:'תגובה לבקשה (ימי עבודה)',en:'Response to Motion',dh:'10 ימי עבודה מקבלת הבקשה',de:'10 working days from receiving motion'},
+  {id:'l5',days:30,ref:'סעיף 52 חוק בתי המשפט',he:'בקשת רשות ערעור',en:'Leave to Appeal',dh:'30 יום מיום מתן ההחלטה',de:'30 days from decision date'},
+  {id:'l6',days:0,ref:'תקנה 371',he:'בקשת עיכוב ביצוע',en:'Stay of Execution',dh:'יחד עם הגשת הערעור',de:'Together with filing the appeal'},
+  {id:'l7',days:30,ref:'חוק הוצאה לפועל',he:'פתיחת תיק הוצאה לפועל',en:'Enforcement File',dh:'30 יום לאחר פסק הדין',de:'30 days after judgment'},
+  {id:'l8',days:30,ref:'תקנה 55',he:'תביעה שכנגד',en:'Counterclaim',dh:'30 יום מהמצאת כתב התביעה',de:'30 days from service'},
+  {id:'l9',days:14,ref:'תקנות תביעות קטנות',he:'תגובה — תביעות קטנות',en:'Small Claims Response',dh:'14 ימים מהמצאה',de:'14 days from service'},
+  {id:'l10',days:30,ref:'חוק בית הדין לעבודה',he:'ערעור — בית דין לעבודה',en:'Labor Court Appeal',dh:'30 יום מיום פסק הדין',de:'30 days from judgment'}
+];
+var PROCS=[{k:'fast',he:'סדר דין מהיר',en:'Fast Track'},{k:'regular',he:'סדר דין רגיל',en:'Regular Track'},{k:'appeal',he:'ערעור',en:'Appeal'},{k:'urgent',he:'בקשה דחופה',en:'Urgent Motion'},{k:'labor',he:'בית דין לעבודה',en:'Labor Court'},{k:'small',he:'תביעות קטנות',en:'Small Claims'},{k:'other',he:'אחר',en:'Other'}];
+var COURTS=[{k:'mag_tlv',he:'שלום — תל אביב',en:'Magistrate — Tel Aviv'},{k:'mag_jlm',he:'שלום — ירושלים',en:'Magistrate — Jerusalem'},{k:'mag_hfa',he:'שלום — חיפה',en:'Magistrate — Haifa'},{k:'dis_tlv',he:'מחוזי — תל אביב',en:'District — Tel Aviv'},{k:'dis_jlm',he:'מחוזי — ירושלים',en:'District — Jerusalem'},{k:'dis_cen',he:'מחוזי — מרכז',en:'District — Center'},{k:'supreme',he:'עליון',en:'Supreme Court'},{k:'labor',he:'בית דין לעבודה',en:'Labor Court'},{k:'enf',he:'הוצאה לפועל',en:'Enforcement'}];
+var EV_TYPES=[{k:'hearing',he:'דיון',en:'Hearing'},{k:'filing',he:'הגשה',en:'Filing'},{k:'deadline',he:'מועד אחרון',en:'Deadline'},{k:'service',he:'המצאה',en:'Service'},{k:'judgment',he:'פסק דין',en:'Judgment'},{k:'other',he:'אחר',en:'Other'}];
+var THEMES=[{k:'default',he:'כחול מקצועי',en:'Professional Blue',c:'#185FA5'},{k:'th-dark',he:'כהה',en:'Dark',c:'#4a90d9'},{k:'th-warm',he:'חם — זהב',en:'Warm Gold',c:'#b45309'},{k:'th-slate',he:'אינדיגו',en:'Indigo',c:'#4f46e5'}];
+
+var NAV_ITEMS = [
+  {icon:'⊞',he:'לוח בקרה',en:'Dashboard',pg:'pg-dashboard'},
+  {icon:'📁',he:'תיקים',en:'Cases',pg:'pg-cases'},
+  {icon:'⏰',he:'מועדים',en:'Deadlines',pg:'pg-dl'},
+  {icon:'📅',he:'יומן',en:'Calendar',pg:'pg-cal'},
+  {icon:'⚖️',he:'חוקי סד"פ',en:'Proc. Rules',pg:'pg-laws'},
+  {icon:'🔔',he:'התראות',en:'Alerts',pg:'pg-alerts'},
+  {icon:'📊',he:'דוחות',en:'Reports',pg:'pg-rep'},
+  {icon:'⚙️',he:'הגדרות',en:'Settings',pg:'pg-set'}
+];
+
+/* ══ UTILS ══ */
+function T(h,e){ return lang==='he'?h:e; }
+function getData(){
+  try{ var r=localStorage.getItem(APP+'_data'); if(r) return JSON.parse(r); }catch(x){}
+  return {cases:[],events:[]};
+}
+function saveData(d){
+  try{ localStorage.setItem(APP+'_data',JSON.stringify(d)); return true; }
+  catch(x){ toast(T('שגיאת שמירה','Save error')); return false; }
+}
+function loadCfg(){
+  try{
+    var s=localStorage.getItem(APP+'_cfg');
+    if(s){ var o=JSON.parse(s); lang=o.lang||'he'; theme=o.theme||'default'; uname=o.uname||''; a7=o.a7!==false; a3=o.a3!==false; a1=o.a1!==false; }
+  }catch(x){}
+}
+function saveCfg(){
+  try{ localStorage.setItem(APP+'_cfg',JSON.stringify({lang:lang,theme:theme,uname:uname,a7:a7,a3:a3,a1:a1})); }catch(x){}
+}
+function applyTheme(){
+  var classes='';
+  if(theme!=='default') classes+=theme;
+  if(lang==='en') classes+=(classes?' ':'')+'en';
+  document.body.className=classes;
+}
+function toast(msg,dur){
+  var el=document.getElementById('toast');
+  el.textContent=msg; el.style.display='block';
+  setTimeout(function(){ el.style.display='none'; },dur||2500);
+}
+function uid(){ return Math.random().toString(36).slice(2,9)+Date.now().toString(36); }
+function today(){
+  var d=new Date();
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+}
+function pad(n){ return String(n).padStart(2,'0'); }
+function addDays(ds,n){
+  var d=new Date(ds); d.setDate(d.getDate()+n);
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+}
+function daysTo(ds){
+  var t=new Date(); t.setHours(0,0,0,0);
+  var d=new Date(ds); d.setHours(0,0,0,0);
+  return Math.round((d-t)/86400000);
+}
+function fmtDate(ds){
+  if(!ds) return '';
+  var p=ds.split('-'); return p[2]+'.'+p[1]+'.'+p[0].slice(2);
+}
+function urgBadge(days){
+  if(days<0) return {cls:'b-red',txt:T('חרג!','Overdue!')};
+  if(days===0) return {cls:'b-red',txt:T('היום!','Today!')};
+  if(days<=2) return {cls:'b-red',txt:days+T(' יום',' d')};
+  if(days<=7) return {cls:'b-amber',txt:days+T(' יום',' d')};
+  return {cls:'b-green',txt:days+T(' יום',' d')};
+}
+function filterEvs(evs,f){
+  return evs.filter(function(ev){
+    if(!ev.date) return f==='all';
+    var d=daysTo(ev.date);
+    if(f==='today') return d===0;
+    if(f==='week') return d>=0&&d<=7;
+    if(f==='month') return d>=0&&d<=30;
+    if(f==='3m') return d>=0&&d<=90;
+    if(f==='year') return d>=0&&d<=365;
+    return true;
+  });
+}
+function buildFbar(elId,cur,setCur,rerender){
+  var el=document.getElementById(elId); if(!el) return;
+  el.innerHTML='';
+  var ps=[{k:'today',he:'היום',en:'Today'},{k:'week',he:'שבוע',en:'Week'},{k:'month',he:'חודש',en:'Month'},{k:'3m',he:'3 חודשים',en:'3M'},{k:'year',he:'שנה',en:'Year'},{k:'all',he:'הכל',en:'All'}];
+  ps.forEach(function(p){
+    var b=document.createElement('button'); b.className='fbtn'+(cur===p.k?' on':'');
+    b.textContent=T(p.he,p.en);
+    b.onclick=function(){ setCur(p.k); buildFbar(elId,p.k,setCur,rerender); rerender(); };
+    el.appendChild(b);
+  });
+}
+
+/* ══ NAVIGATION ══ */
+function go(pg){
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('on'); });
+  var el=document.getElementById(pg);
+  if(el){ el.classList.add('on'); curPage=pg; onGo(pg); }
+  document.querySelectorAll('.sb-item').forEach(function(i){ i.classList.toggle('on',i.dataset.pg===pg); });
+}
+function onGo(pg){
+  if(pg==='pg-dashboard') renderDash();
+  if(pg==='pg-cases') renderCases();
+  if(pg==='pg-dl') renderDeadlines();
+  if(pg==='pg-cal') renderCal();
+  if(pg==='pg-laws') renderLaws();
+  if(pg==='pg-alerts') renderAlerts();
+  if(pg==='pg-rep') renderReports();
+  if(pg==='pg-set') renderSettings();
+  if(pg==='pg-design') renderDesign();
+  applyLbls();
+}
+function toggleLang(){
+  lang=lang==='he'?'en':'he';
+  applyTheme(); saveCfg();
+  buildSidebar();
+  onGo(curPage); applyLbls();
+}
+function saveUsername(){
+  uname=(document.getElementById('inp-uname').value||'').trim();
+  saveCfg(); buildSidebarFooter(); toast(T('נשמר','Saved'));
+}
+
+function applyLbls(){
+  var titles={
+    'pg-dashboard':T('לוח בקרה','Dashboard'),
+    'pg-cases':T('תיקים','Cases'),
+    'pg-dl':T('מועדים','Deadlines'),
+    'pg-cal':T('יומן','Calendar'),
+    'pg-laws':T('חוקי סדר הדין','Procedural Rules'),
+    'pg-alerts':T('התראות','Alerts'),
+    'pg-rep':T('דוחות','Reports'),
+    'pg-set':T('הגדרות','Settings'),
+    'pg-design':T('עיצוב','Design'),
+    'pg-about':T('אודות','About')
+  };
+  var tt=document.getElementById('tb-title'); if(tt) tt.textContent=titles[curPage]||'';
+  var ll=document.getElementById('tb-lang-lbl'); if(ll) ll.textContent=lang==='he'?'EN':'עב';
+  var tb=document.getElementById('tb-action-btn'); if(tb) tb.textContent=T('+ תיק חדש','+ New Case');
+  var lu=document.getElementById('lbl-uname'); if(lu) lu.textContent=T('שם עורך הדין','Lawyer Name');
+  var ui=document.getElementById('inp-uname'); if(ui) ui.value=uname;
+  var bd=document.getElementById('btn-delall'); if(bd) bd.textContent=T('🗑 מחק את כל הנתונים','🗑 Delete All Data');
+  var bp=document.getElementById('btn-pdf'); if(bp) bp.textContent=T('📄 ייצוא PDF','📄 Export PDF');
+  var bc=document.getElementById('btn-csv'); if(bc) bc.textContent=T('📊 ייצוא CSV','📊 Export CSV');
+  var bs=document.getElementById('btn-ab-share'); if(bs) bs.textContent=T('📣 שתף','📣 Share');
+  var av=document.getElementById('ab-ver'); if(av) av.textContent='v'+VER;
+  var ad=document.getElementById('ab-desc'); if(ad) ad.textContent=T('יומן מועדים חכם לעורכי דין ישראלים. ניהול תיקים, מועדי הגשה, והתראות לפי תקנות סדר הדין האזרחי התשע"ט-2018.','Smart legal calendar for Israeli lawyers. Case management, filing deadlines and alerts per Civil Procedure Rules 2018.');
+  var ss=document.getElementById('sb-sub'); if(ss) ss.textContent=T('מערכת ניהול משפטית','Legal Management System');
+  var sr=document.getElementById('sb-role'); if(sr) sr.textContent=T('עורך דין','Lawyer');
+}
+
+/* ══ SIDEBAR ══ */
+function buildSidebar(){
+  var nav=document.getElementById('sb-nav'); nav.innerHTML='';
+  NAV_ITEMS.forEach(function(it){
+    var btn=document.createElement('button'); btn.className='sb-item'+(curPage===it.pg?' on':'');
+    btn.dataset.pg=it.pg;
+    var ic=document.createElement('span'); ic.className='sb-item-icon'; ic.textContent=it.icon;
+    var lbl=document.createElement('span'); lbl.className='sb-item-label'; lbl.textContent=T(it.he,it.en);
+    btn.appendChild(ic); btn.appendChild(lbl);
+    btn.onclick=function(){ go(it.pg); };
+    nav.appendChild(btn);
+  });
+  buildSidebarFooter();
+}
+function buildSidebarFooter(){
+  var av=document.getElementById('sb-avatar');
+  var un=document.getElementById('sb-uname-disp');
+  if(av) av.textContent=uname?uname.charAt(0).toUpperCase():'?';
+  if(un) un.textContent=uname||T('עורך דין','Lawyer');
+}
+
+/* ══ DASHBOARD ══ */
+function renderDash(){
+  var d=getData();
+  var urg=0,wk=0,mo=0;
+  d.events.forEach(function(ev){
+    if(!ev.date) return;
+    var dy=daysTo(ev.date);
+    if(dy>=0&&dy<=2) urg++;
+    if(dy>=0&&dy<=7) wk++;
+    if(dy>=0&&dy<=30) mo++;
+  });
+  var sg=document.getElementById('dash-stats'); sg.innerHTML='';
+  [{n:d.cases.length,l:T('תיקים פעילים','Active Cases'),s:T('סה"כ','total')},{n:urg,l:T('דחופים','Urgent'),s:T('0-2 ימים','0-2 days')},{n:wk,l:T('ב-7 ימים','Next 7 Days'),s:T('מועדים','deadlines')},{n:mo,l:T('ב-30 יום','Next 30 Days'),s:T('מועדים','deadlines')}].forEach(function(it){
+    var c=document.createElement('div'); c.className='stat-card';
+    var l=document.createElement('div'); l.className='stat-label'; l.textContent=it.l;
+    var n=document.createElement('div'); n.className='stat-num'; n.textContent=it.n;
+    var s=document.createElement('div'); s.className='stat-sub'; s.textContent=it.s;
+    c.appendChild(l); c.appendChild(n); c.appendChild(s); sg.appendChild(c);
+  });
+
+  /* urgent card */
+  var uc=document.getElementById('dash-urgent-card'); uc.innerHTML='';
+  var uhd=mkCardHd(T('מועדים דחופים','Urgent Deadlines'),null); uc.appendChild(uhd);
+  var urgEvs=d.events.filter(function(ev){ return ev.date&&daysTo(ev.date)>=0&&daysTo(ev.date)<=14; });
+  urgEvs.sort(function(a,b){ return a.date.localeCompare(b.date); });
+  if(urgEvs.length===0){
+    uc.appendChild(mkEmpty('✅',T('אין מועדים דחופים','No urgent deadlines')));
+  } else {
+    var tbl=buildEvTable(urgEvs.slice(0,5),d,false);
+    uc.appendChild(tbl);
+  }
+
+  /* timeline card */
+  var tc=document.getElementById('dash-timeline-card'); tc.innerHTML='';
+  var thd=mkCardHd(T('ציר זמן','Timeline'),null); tc.appendChild(thd);
+  var upcoming=d.events.filter(function(ev){ return ev.date&&daysTo(ev.date)>=0&&daysTo(ev.date)<=30; });
+  upcoming.sort(function(a,b){ return a.date.localeCompare(b.date); });
+  if(upcoming.length===0){
+    tc.appendChild(mkEmpty('📅',T('אין מועדים ב-30 יום','No deadlines in 30 days')));
+  } else {
+    var tlWrap=document.createElement('div'); tlWrap.style.padding='14px 18px';
+    upcoming.slice(0,5).forEach(function(ev,idx){
+      var c2=d.cases.find(function(x){ return x.id===ev.caseId; });
+      var dy=daysTo(ev.date);
+      var item=document.createElement('div');
+      item.style.cssText='display:flex;gap:12px;margin-bottom:'+(idx<upcoming.length-1?'14px':'0');
+      var dotWrap=document.createElement('div');
+      dotWrap.style.cssText='display:flex;flex-direction:column;align-items:center;width:14px;flex-shrink:0;';
+      var dot=document.createElement('div');
+      dot.style.cssText='width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:3px;background:'+(dy<=2?'var(--red)':dy<=7?'var(--amber)':'var(--acc)')+';';
+      dotWrap.appendChild(dot);
+      if(idx<upcoming.slice(0,5).length-1){
+        var line=document.createElement('div');
+        line.style.cssText='width:1px;flex:1;background:var(--brd);margin-top:3px;min-height:16px;';
+        dotWrap.appendChild(line);
+      }
+      var body=document.createElement('div'); body.style.flex='1';
+      var t=document.createElement('div'); t.style.cssText='font-size:13px;font-weight:600;color:var(--txt);';
+      t.textContent=ev.title;
+      var s=document.createElement('div'); s.style.cssText='font-size:11px;color:var(--txt3);margin-top:2px;';
+      s.textContent=(c2?c2.name+' · ':'')+fmtDate(ev.date)+(ev.ref?' · '+ev.ref:'');
+      body.appendChild(t); body.appendChild(s);
+      var u=urgBadge(dy); var badge=document.createElement('span');
+      badge.className='badge '+u.cls; badge.textContent=u.txt;
+      item.appendChild(dotWrap); item.appendChild(body); item.appendChild(badge);
+      tlWrap.appendChild(item);
+    });
+    tc.appendChild(tlWrap);
+  }
+
+  /* cases card */
+  var cc=document.getElementById('dash-cases-card'); cc.innerHTML='';
+  var chd=mkCardHd(T('תיקים אחרונים','Recent Cases'),function(){ go('pg-cases'); }); cc.appendChild(chd);
+  if(d.cases.length===0){
+    cc.appendChild(mkEmpty('📁',T('אין תיקים','No cases')));
+  } else {
+    var tbl2=document.createElement('table'); tbl2.className='tbl';
+    var thead=document.createElement('thead'); var hr=document.createElement('tr');
+    [T('שם','Name'),T('מסמך','Number'),T('סטטוס','Status')].forEach(function(h){
+      var th=document.createElement('th'); th.textContent=h; hr.appendChild(th);
+    });
+    thead.appendChild(hr); tbl2.appendChild(thead);
+    var tbody=document.createElement('tbody');
+    d.cases.slice(0,5).forEach(function(c2){
+      var nextEv=null; var minD=999999;
+      d.events.forEach(function(ev){ if(ev.caseId===c2.id&&ev.date){ var dy=daysTo(ev.date); if(dy>=0&&dy<minD){ minD=dy; nextEv=ev; } } });
+      var tr=document.createElement('tr');
+      var td1=document.createElement('td');
+      var nm=document.createElement('div'); nm.className='tbl-name'; nm.textContent=c2.name;
+      td1.appendChild(nm);
+      var td2=document.createElement('td'); td2.textContent=c2.caseNum||'—';
+      var td3=document.createElement('td');
+      if(nextEv){ var u=urgBadge(minD); var b=document.createElement('span'); b.className='badge '+u.cls; b.textContent=u.txt; td3.appendChild(b); }
+      else { var b2=document.createElement('span'); b2.className='badge b-gray'; b2.textContent=T('אין מועד','No deadline'); td3.appendChild(b2); }
+      tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
+      tr.style.cursor='pointer'; tr.onclick=function(){ openCaseDetail(c2.id); };
+      tbody.appendChild(tr);
+    });
+    tbl2.appendChild(tbody); cc.appendChild(tbl2);
+  }
+
+  /* alerts card */
+  var ac=document.getElementById('dash-alerts-card'); ac.innerHTML='';
+  var ahd=mkCardHd(T('התראות פעילות','Active Alerts'),function(){ go('pg-alerts'); }); ac.appendChild(ahd);
+  var alertItems=[];
+  d.events.forEach(function(ev){
+    if(!ev.date) return;
+    var dy=daysTo(ev.date);
+    if((a1&&dy>=0&&dy<=1)||(a3&&dy>=0&&dy<=3)||(a7&&dy>=0&&dy<=7)) alertItems.push(ev);
+  });
+  alertItems.sort(function(a,b){ return a.date.localeCompare(b.date); });
+  if(alertItems.length===0){
+    ac.appendChild(mkEmpty('🔔',T('אין התראות','No alerts')));
+  } else {
+    alertItems.slice(0,4).forEach(function(ev){
+      var c2=d.cases.find(function(x){ return x.id===ev.caseId; });
+      var dy=daysTo(ev.date);
+      var row=document.createElement('div'); row.className='alert-row';
+      var icon=document.createElement('div'); icon.className='alert-icon';
+      icon.style.background=dy<=1?'var(--red-s)':dy<=3?'var(--amber-s)':'var(--acc-s)';
+      icon.textContent=dy<=1?'🔴':dy<=3?'🟡':'🔵';
+      var body=document.createElement('div'); body.className='alert-body';
+      var t=document.createElement('div'); t.className='alert-title'; t.textContent=ev.title;
+      var s=document.createElement('div'); s.className='alert-sub';
+      s.textContent=(c2?c2.name+' · ':'')+fmtDate(ev.date);
+      body.appendChild(t); body.appendChild(s);
+      var u=urgBadge(dy); var badge=document.createElement('span');
+      badge.className='badge '+u.cls; badge.textContent=u.txt;
+      row.appendChild(icon); row.appendChild(body); row.appendChild(badge);
+      ac.appendChild(row);
+    });
+  }
+}
+
+/* ══ CASES ══ */
+function renderCases(){
+  var d=getData(); var card=document.getElementById('cases-card'); card.innerHTML='';
+  var hd=mkCardHd(T('כל התיקים','All Cases'),null);
+  var addBtn=document.createElement('button'); addBtn.className='btn btn-primary btn-sm';
+  addBtn.textContent=T('+ תיק חדש','+ New Case'); addBtn.onclick=openNewCase;
+  hd.querySelector('.card-hd').appendChild(addBtn);
+  card.appendChild(hd);
+  if(d.cases.length===0){
+    card.appendChild(mkEmpty('📁',T('אין תיקים','No cases'),T('לחץ "+ תיק חדש" להתחלה','Click "+ New Case" to start')));
+    return;
+  }
+  var tbl=document.createElement('table'); tbl.className='tbl';
+  var thead=document.createElement('thead'); var hr=document.createElement('tr');
+  [T('שם התיק','Case Name'),T('מסמך','Number'),T('בית משפט','Court'),T('הליך','Procedure'),T('מועד הבא','Next Deadline'),T('פעולות','Actions')].forEach(function(h){
+    var th=document.createElement('th'); th.textContent=h; hr.appendChild(th);
+  });
+  thead.appendChild(hr); tbl.appendChild(thead);
+  var tbody=document.createElement('tbody');
+  d.cases.forEach(function(c2){
+    var nextEv=null; var minD=999999;
+    d.events.forEach(function(ev){ if(ev.caseId===c2.id&&ev.date){ var dy=daysTo(ev.date); if(dy>=0&&dy<minD){ minD=dy; nextEv=ev; } } });
+    var cObj=COURTS.find(function(x){ return x.k===c2.court; });
+    var pObj=PROCS.find(function(x){ return x.k===c2.proc; });
+    var tr=document.createElement('tr');
+    var td1=document.createElement('td');
+    var nm=document.createElement('div'); nm.className='tbl-name'; nm.textContent=c2.name;
+    td1.appendChild(nm); td1.style.cursor='pointer'; td1.onclick=function(){ openCaseDetail(c2.id); };
+    var td2=document.createElement('td'); td2.textContent=c2.caseNum||'—';
+    var td3=document.createElement('td'); td3.textContent=cObj?T(cObj.he,cObj.en):'—';
+    var td4=document.createElement('td');
+    if(pObj){ var pb=document.createElement('span'); pb.className='badge b-blue'; pb.textContent=T(pObj.he,pObj.en); td4.appendChild(pb); }
+    else td4.textContent='—';
+    var td5=document.createElement('td');
+    if(nextEv){ var u=urgBadge(minD); var b=document.createElement('span'); b.className='badge '+u.cls; b.textContent=fmtDate(nextEv.date)+' · '+u.txt; td5.appendChild(b); }
+    else td5.textContent='—';
+    var td6=document.createElement('td');
+    var eb=document.createElement('button'); eb.className='btn btn-sm'; eb.textContent='✏️';
+    eb.onclick=function(){ openEditCase(c2.id); };
+    td6.appendChild(eb);
+    tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4); tr.appendChild(td5); tr.appendChild(td6);
+    var lp;
+    tr.addEventListener('mousedown',function(){ lp=setTimeout(function(){ openEditCase(c2.id); },600); });
+    tr.addEventListener('mouseup',function(){ clearTimeout(lp); });
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody); card.appendChild(tbl);
+}
+
+function openCaseDetail(caseId){
+  var d=getData(); var c=d.cases.find(function(x){ return x.id===caseId; }); if(!c) return;
+  var ov=mkOv(); var box=mkBox();
+  box.appendChild(mkMoHd(c.name,ov));
+  var body=document.createElement('div'); body.className='mo-body';
+  var evs=d.events.filter(function(ev){ return ev.caseId===caseId; });
+  evs.sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
+  if(evs.length===0){
+    body.appendChild(mkEmpty('📅',T('אין מועדים לתיק זה','No events for this case')));
+  } else {
+    var tbl=buildEvTable(evs,d,true);
+    tbl.style.borderRadius='0';
+    body.appendChild(tbl);
+  }
+  var addBtn=document.createElement('button'); addBtn.className='btn btn-primary';
+  addBtn.style.marginTop='12px'; addBtn.textContent=T('+ הוסף מועד','+ Add Deadline');
+  addBtn.onclick=function(){ document.body.removeChild(ov); openNewEvent(caseId); };
+  body.appendChild(addBtn); box.appendChild(body);
+  var ft=document.createElement('div'); ft.className='mo-footer';
+  var cl=document.createElement('button'); cl.className='btn'; cl.textContent=T('סגור','Close');
+  cl.onclick=function(){ document.body.removeChild(ov); };
+  ft.appendChild(cl); box.appendChild(ft);
+  ov.appendChild(box); ov.onclick=function(e){ if(e.target===ov) document.body.removeChild(ov); };
+  document.body.appendChild(ov);
+}
+
+function buildEvTable(evs,d,showEdit){
+  var tbl=document.createElement('table'); tbl.className='tbl';
+  var thead=document.createElement('thead'); var hr=document.createElement('tr');
+  var cols=[T('כותרת','Title'),T('תאריך','Date'),T('תקנה','Rule'),T('סטטוס','Status')];
+  if(showEdit) cols.push('');
+  cols.forEach(function(h){ var th=document.createElement('th'); th.textContent=h; hr.appendChild(th); });
+  thead.appendChild(hr); tbl.appendChild(thead);
+  var tbody=document.createElement('tbody');
+  evs.forEach(function(ev){
+    var dy=daysTo(ev.date); var u=urgBadge(dy);
+    var c2=d.cases.find(function(x){ return x.id===ev.caseId; });
+    var tr=document.createElement('tr');
+    var td1=document.createElement('td');
+    var nm=document.createElement('div'); nm.className='tbl-name'; nm.textContent=ev.title;
+    if(c2&&!showEdit){ var sub=document.createElement('div'); sub.className='tbl-sub'; sub.textContent=c2.name; td1.appendChild(sub); }
+    td1.insertBefore(nm,td1.firstChild);
+    var td2=document.createElement('td'); td2.textContent=fmtDate(ev.date);
+    var td3=document.createElement('td'); td3.style.fontSize='12px'; td3.style.color='var(--txt3)'; td3.textContent=ev.ref||'—';
+    var td4=document.createElement('td');
+    var badge=document.createElement('span'); badge.className='badge '+u.cls; badge.textContent=u.txt; td4.appendChild(badge);
+    tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4);
+    if(showEdit){
+      var td5=document.createElement('td');
+      var eb=document.createElement('button'); eb.className='btn btn-sm'; eb.textContent='✏️';
+      eb.onclick=function(){ openEditEvent(ev.id); };
+      td5.appendChild(eb); tr.appendChild(td5);
+    }
+    var lp;
+    tr.addEventListener('mousedown',function(){ lp=setTimeout(function(){ openEditEvent(ev.id); },600); });
+    tr.addEventListener('mouseup',function(){ clearTimeout(lp); });
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody); return tbl;
+}
+
+function openNewCase(){
+  var ov=mkOv(); var box=mkBox();
+  box.appendChild(mkMoHd(T('תיק חדש','New Case'),ov));
+  var body=document.createElement('div'); body.className='mo-body';
+  var grid=document.createElement('div'); grid.className='form-grid';
+  var fName=mkFld(T('שם התיק','Case Name'),'text');
+  var fNum=mkFld(T('מספר תיק','Case Number'),'text');
+  grid.appendChild(fName.w); grid.appendChild(fNum.w);
+  body.appendChild(grid);
+  var grid2=document.createElement('div'); grid2.className='form-grid';
+  var fCourt=mkSel(T('בית משפט','Court'),COURTS);
+  var fProc=mkSel(T('סוג הליך','Procedure'),PROCS);
+  grid2.appendChild(fCourt.w); grid2.appendChild(fProc.w);
+  body.appendChild(grid2);
+  var fSvc=mkFld(T('תאריך המצאה (לחישוב מועדים אוטומטי)','Service Date (for auto deadlines)'),'date');
+  var fNotes=mkTa(T('הערות','Notes'));
+  body.appendChild(fSvc.w); body.appendChild(fNotes.w);
+  box.appendChild(body);
+  var ft=document.createElement('div'); ft.className='mo-footer';
+  var sv=document.createElement('button'); sv.className='btn btn-primary';
+  sv.textContent=T('✓ צור תיק + חשב מועדים אוטומטית','✓ Create + Auto-Calculate Deadlines');
+  sv.onclick=function(){
+    var nm=fName.i.value.trim(); if(!nm){ toast(T('חסר שם','Name required')); return; }
+    var d=getData();
+    var c={id:uid(),name:nm,caseNum:fNum.i.value.trim(),court:fCourt.i.value,proc:fProc.i.value,serviceDate:fSvc.i.value,notes:fNotes.i.value.trim(),created:today()};
+    d.cases.push(c);
+    if(c.serviceDate) calcDeadlines(d,c);
+    saveData(d); document.body.removeChild(ov);
+    toast(T('תיק נוצר!','Case created!')); renderDash(); renderCases();
+  };
+  var cl=document.createElement('button'); cl.className='btn'; cl.textContent=T('ביטול','Cancel');
+  cl.onclick=function(){ document.body.removeChild(ov); };
+  ft.appendChild(sv); ft.appendChild(cl); box.appendChild(ft);
+  ov.appendChild(box); ov.onclick=function(e){ if(e.target===ov) document.body.removeChild(ov); };
+  document.body.appendChild(ov);
+}
+
+function calcDeadlines(d,c){
+  var svc=c.serviceDate; var p=c.proc; var items=[];
+  if(p==='fast'){ items.push({t:T('הגשת כתב הגנה','Defense Filing'),dt:addDays(svc,30),ref:'תקנה 214ד'}); items.push({t:T('תביעה שכנגד','Counterclaim'),dt:addDays(svc,30),ref:'תקנה 55'}); }
+  else if(p==='regular'){ items.push({t:T('הגשת כתב הגנה','Defense Filing'),dt:addDays(svc,60),ref:'תקנה 51'}); items.push({t:T('תביעה שכנגד','Counterclaim'),dt:addDays(svc,30),ref:'תקנה 55'}); }
+  else if(p==='appeal'){ items.push({t:T('הגשת ערעור','File Appeal'),dt:addDays(svc,45),ref:'תקנה 400'}); }
+  else if(p==='small'){ items.push({t:T('הגשת תגובה','File Response'),dt:addDays(svc,14),ref:'תקנות תביעות קטנות'}); }
+  else if(p==='labor'){ items.push({t:T('הגשת כתב הגנה','Defense Filing'),dt:addDays(svc,30),ref:'חוק בית הדין לעבודה'}); }
+  items.forEach(function(it){
+    d.events.push({id:uid(),caseId:c.id,title:it.t,date:it.dt,ref:it.ref,type:'deadline',auto:true,created:today()});
+  });
+}
+
+function openEditCase(caseId){
+  var d=getData(); var c=d.cases.find(function(x){ return x.id===caseId; }); if(!c) return;
+  var ov=mkOv(); var box=mkBox();
+  box.appendChild(mkMoHd(T('עריכת תיק','Edit Case'),ov));
+  var body=document.createElement('div'); body.className='mo-body';
+  var grid=document.createElement('div'); grid.className='form-grid';
+  var fName=mkFld(T('שם התיק','Case Name'),'text'); fName.i.value=c.name;
+  var fNum=mkFld(T('מספר תיק','Case Number'),'text'); fNum.i.value=c.caseNum||'';
+  grid.appendChild(fName.w); grid.appendChild(fNum.w); body.appendChild(grid);
+  var grid2=document.createElement('div'); grid2.className='form-grid';
+  var fCourt=mkSel(T('בית משפט','Court'),COURTS); fCourt.i.value=c.court||'';
+  var fProc=mkSel(T('סוג הליך','Procedure'),PROCS); fProc.i.value=c.proc||'';
+  grid2.appendChild(fCourt.w); grid2.appendChild(fProc.w); body.appendChild(grid2);
+  var fSvc=mkFld(T('תאריך המצאה','Service Date'),'date'); fSvc.i.value=c.serviceDate||'';
+  var fNotes=mkTa(T('הערות','Notes')); fNotes.i.value=c.notes||'';
+  body.appendChild(fSvc.w); body.appendChild(fNotes.w); box.appendChild(body);
+  var ft=document.createElement('div'); ft.className='mo-footer';
+  var sv=document.createElement('button'); sv.className='btn btn-primary';
+  sv.textContent=T('שמור','Save');
+  sv.onclick=function(){
+    c.name=fName.i.value.trim(); c.caseNum=fNum.i.value.trim();
+    c.court=fCourt.i.value; c.proc=fProc.i.value;
+    c.serviceDate=fSvc.i.value; c.notes=fNotes.i.value.trim();
+    saveData(d); document.body.removeChild(ov); toast(T('נשמר','Saved')); renderCases(); renderDash();
+  };
+  var del=document.createElement('button'); del.className='btn btn-danger';
+  del.textContent=T('🗑 מחק','🗑 Delete');
+  del.onclick=function(){
+    if(!confirm(T('למחוק תיק זה?','Delete this case?'))) return;
+    d.cases=d.cases.filter(function(x){ return x.id!==caseId; });
+    d.events=d.events.filter(function(x){ return x.caseId!==caseId; });
+    saveData(d); document.body.removeChild(ov); toast(T('נמחק','Deleted')); renderCases(); renderDash();
+  };
+  var cl=document.createElement('button'); cl.className='btn'; cl.textContent=T('ביטול','Cancel');
+  cl.onclick=function(){ document.body.removeChild(ov); };
+  ft.appendChild(sv); ft.appendChild(del); ft.appendChild(cl); box.appendChild(ft);
+  ov.appendChild(box); ov.onclick=function(e){ if(e.target===ov) document.body.removeChild(ov); };
+  document.body.appendChild(ov);
+}
+
+/* ══ EVENTS ══ */
+function openNewEvent(caseId){
+  var d=getData(); var ov=mkOv(); var box=mkBox();
+  box.appendChild(mkMoHd(T('מועד חדש','New Deadline'),ov));
+  var body=document.createElement('div'); body.className='mo-body';
+  var fCase;
+  if(!caseId){
+    var cOpts=d.cases.map(function(c){ return {k:c.id,he:c.name,en:c.name}; });
+    cOpts.unshift({k:'',he:'— בחר תיק —',en:'— Select Case —'});
+    fCase=mkSel(T('תיק','Case'),cOpts); body.appendChild(fCase.w);
+  }
+  var grid=document.createElement('div'); grid.className='form-grid';
+  var fTitle=mkFld(T('כותרת','Title'),'text');
+  var fDate=mkFld(T('תאריך','Date'),'date');
+  grid.appendChild(fTitle.w); grid.appendChild(fDate.w); body.appendChild(grid);
+  var grid2=document.createElement('div'); grid2.className='form-grid';
+  var fType=mkSel(T('סוג','Type'),EV_TYPES);
+  var fRef=mkFld(T('תקנה / סעיף','Rule/Section'),'text');
+  grid2.appendChild(fType.w); grid2.appendChild(fRef.w); body.appendChild(grid2);
+  var fNotes=mkTa(T('הערות','Notes')); body.appendChild(fNotes.w);
+  box.appendChild(body);
+  var ft=document.createElement('div'); ft.className='mo-footer';
+  var sv=document.createElement('button'); sv.className='btn btn-primary';
+  sv.textContent=T('✓ הוסף מועד','✓ Add Deadline');
+  sv.onclick=function(){
+    var ti=fTitle.i.value.trim(); if(!ti){ toast(T('חסרה כותרת','Title required')); return; }
+    var cid=caseId||(fCase?fCase.i.value:'');
+    d.events.push({id:uid(),caseId:cid,title:ti,type:fType.i.value,date:fDate.i.value,ref:fRef.i.value.trim(),notes:fNotes.i.value.trim(),created:today()});
+    saveData(d); document.body.removeChild(ov); toast(T('נוסף!','Added!')); renderDash();
+  };
+  var cl=document.createElement('button'); cl.className='btn'; cl.textContent=T('ביטול','Cancel');
+  cl.onclick=function(){ document.body.removeChild(ov); };
+  ft.appendChild(sv); ft.appendChild(cl); box.appendChild(ft);
+  ov.appendChild(box); ov.onclick=function(e){ if(e.target===ov) document.body.removeChild(ov); };
+  document.body.appendChild(ov);
+}
+
+function openEditEvent(evId){
+  var d=getData(); var ev=d.events.find(function(x){ return x.id===evId; }); if(!ev) return;
+  var ov=mkOv(); var box=mkBox();
+  box.appendChild(mkMoHd(T('עריכת מועד','Edit Deadline'),ov));
+  var body=document.createElement('div'); body.className='mo-body';
+  var grid=document.createElement('div'); grid.className='form-grid';
+  var fTitle=mkFld(T('כותרת','Title'),'text'); fTitle.i.value=ev.title;
+  var fDate=mkFld(T('תאריך','Date'),'date'); fDate.i.value=ev.date||'';
+  grid.appendChild(fTitle.w); grid.appendChild(fDate.w); body.appendChild(grid);
+  var grid2=document.createElement('div'); grid2.className='form-grid';
+  var fType=mkSel(T('סוג','Type'),EV_TYPES); fType.i.value=ev.type||'deadline';
+  var fRef=mkFld(T('תקנה / סעיף','Rule'),'text'); fRef.i.value=ev.ref||'';
+  grid2.appendChild(fType.w); grid2.appendChild(fRef.w); body.appendChild(grid2);
+  var fNotes=mkTa(T('הערות','Notes')); fNotes.i.value=ev.notes||''; body.appendChild(fNotes.w);
+  box.appendChild(body);
+  var ft=document.createElement('div'); ft.className='mo-footer';
+  var sv=document.createElement('button'); sv.className='btn btn-primary';
+  sv.textContent=T('שמור','Save');
+  sv.onclick=function(){
+    ev.title=fTitle.i.value.trim(); ev.type=fType.i.value;
+    ev.date=fDate.i.value; ev.ref=fRef.i.value.trim(); ev.notes=fNotes.i.value.trim();
+    saveData(d); document.body.removeChild(ov); toast(T('נשמר','Saved')); renderDash();
+  };
+  var del=document.createElement('button'); del.className='btn btn-danger';
+  del.textContent=T('🗑 מחק','🗑 Delete');
+  del.onclick=function(){
+    d.events=d.events.filter(function(x){ return x.id!==evId; });
+    saveData(d); document.body.removeChild(ov); toast(T('נמחק','Deleted')); renderDash();
+  };
+  var cl=document.createElement('button'); cl.className='btn'; cl.textContent=T('ביטול','Cancel');
+  cl.onclick=function(){ document.body.removeChild(ov); };
+  ft.appendChild(sv); ft.appendChild(del); ft.appendChild(cl); box.appendChild(ft);
+  ov.appendChild(box); ov.onclick=function(e){ if(e.target===ov) document.body.removeChild(ov); };
+  document.body.appendChild(ov);
+}
+
+/* ══ DEADLINES ══ */
+function renderDeadlines(){
+  buildFbar('dl-fbar',dlF,function(v){ dlF=v; },renderDlTable);
+  renderDlTable();
+}
+function renderDlTable(){
+  var d=getData(); var card=document.getElementById('dl-card'); card.innerHTML='';
+  var hd=mkCardHd(T('רשימת מועדים','Deadline List'),null);
+  var addBtn=document.createElement('button'); addBtn.className='btn btn-primary btn-sm';
+  addBtn.textContent=T('+ הוסף מועד','+ Add');
+  addBtn.onclick=function(){ openNewEvent(null); };
+  hd.querySelector('.card-hd').appendChild(addBtn);
+  card.appendChild(hd);
+  var evs=d.events.filter(function(ev){ return ev.date; });
+  evs=filterEvs(evs,dlF);
+  evs.sort(function(a,b){ return a.date.localeCompare(b.date); });
+  if(evs.length===0){
+    card.appendChild(mkEmpty('⏰',T('אין מועדים בטווח זה','No deadlines in this range')));
+  } else {
+    card.appendChild(buildEvTable(evs,d,true));
+  }
+}
+
+/* ══ CALENDAR ══ */
+function renderCal(){
+  if(!calY){ var now=new Date(); calY=now.getFullYear(); calM=now.getMonth(); }
+  drawCal();
+}
+function calMove(dir){ calM+=dir; if(calM<0){ calM=11; calY--; } if(calM>11){ calM=0; calY++; } drawCal(); }
+function drawCal(){
+  var MHE=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  var MEN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var card=document.getElementById('cal-main-card'); card.innerHTML='';
+  var chd=document.createElement('div'); chd.className='cal-hd';
+  var ml=document.createElement('div'); ml.className='cal-month-lbl';
+  ml.textContent=T(MHE[calM],MEN[calM])+' '+calY;
+  var nav=document.createElement('div'); nav.className='cal-nav';
+  var prev=document.createElement('button'); prev.className='cal-nav-btn'; prev.textContent='‹'; prev.onclick=function(){ calMove(-1); };
+  var next2=document.createElement('button'); next2.className='cal-nav-btn'; next2.textContent='›'; next2.onclick=function(){ calMove(1); };
+  nav.appendChild(prev); nav.appendChild(next2);
+  chd.appendChild(ml); chd.appendChild(nav); card.appendChild(chd);
+  var wrap=document.createElement('div'); wrap.className='cal-grid-wrap';
+  var dlabels=document.createElement('div'); dlabels.className='cal-days';
+  var DHE=['א','ב','ג','ד','ה','ו','ש'],DEN=['Su','Mo','Tu','We','Th','Fr','Sa'];
+  for(var i=0;i<7;i++){ var dl=document.createElement('div'); dl.className='cal-day-lbl'; dl.textContent=lang==='he'?DHE[i]:DEN[i]; dlabels.appendChild(dl); }
+  wrap.appendChild(dlabels);
+  var cells=document.createElement('div'); cells.className='cal-cells';
+  var first=new Date(calY,calM,1).getDay();
+  var dim=new Date(calY,calM+1,0).getDate();
+  var now=new Date(); now.setHours(0,0,0,0);
+  var d=getData(); var evByDay={};
+  d.events.forEach(function(ev){
+    if(!ev.date) return;
+    var p=ev.date.split('-');
+    if(parseInt(p[0])===calY&&parseInt(p[1])-1===calM){ var dy2=parseInt(p[2]); if(!evByDay[dy2]) evByDay[dy2]=[]; evByDay[dy2].push(ev); }
+  });
+  for(var i=0;i<first;i++) cells.appendChild(document.createElement('div'));
+  for(var day=1;day<=dim;day++){
+    var cell=document.createElement('div'); cell.className='cal-cell';
+    var dt=new Date(calY,calM,day); dt.setHours(0,0,0,0);
+    if(dt.getTime()===now.getTime()) cell.classList.add('today');
+    if(evByDay[day]) cell.classList.add('has-ev');
+    var cn=document.createElement('div'); cn.className='cal-num'; cn.textContent=day; cell.appendChild(cn);
+    if(evByDay[day]){
+      var dots=document.createElement('div'); dots.className='cal-dots';
+      evByDay[day].slice(0,3).forEach(function(ev){ var dot=document.createElement('div'); dot.className='cal-dot'; var dy3=daysTo(ev.date); if(dy3<=2) dot.classList.add('r'); else if(dy3<=7) dot.classList.add('a'); dots.appendChild(dot); });
+      cell.appendChild(dots);
+    }
+    var ref=day; var evRef=evByDay[day];
+    cell.onclick=function(){ showCalDay(ref,evRef,d); };
+    cells.appendChild(cell);
+  }
+  wrap.appendChild(cells); card.appendChild(wrap);
+  var lc=document.getElementById('cal-list-card'); lc.innerHTML='';
+  var lhd=mkCardHd(T('מועדים ב-30 יום','Next 30 Days'),null); lc.appendChild(lhd);
+  var upcoming=d.events.filter(function(ev){ return ev.date&&daysTo(ev.date)>=0&&daysTo(ev.date)<=30; });
+  upcoming.sort(function(a,b){ return a.date.localeCompare(b.date); });
+  if(upcoming.length===0){ lc.appendChild(mkEmpty('📅',T('אין מועדים','No deadlines'))); }
+  else {
+    var tbl=document.createElement('table'); tbl.className='tbl';
+    var thead=document.createElement('thead'); var hr=document.createElement('tr');
+    [T('כותרת','Title'),T('תאריך','Date'),T('סטטוס','Status')].forEach(function(h){ var th=document.createElement('th'); th.textContent=h; hr.appendChild(th); });
+    thead.appendChild(hr); tbl.appendChild(thead);
+    var tbody=document.createElement('tbody');
+    upcoming.forEach(function(ev){
+      var c2=d.cases.find(function(x){ return x.id===ev.caseId; });
+      var dy=daysTo(ev.date); var u=urgBadge(dy);
+      var tr=document.createElement('tr');
+      var td1=document.createElement('td');
+      var nm=document.createElement('div'); nm.className='tbl-name'; nm.textContent=ev.title;
+      var sub2=document.createElement('div'); sub2.className='tbl-sub'; sub2.textContent=c2?c2.name:'';
+      td1.appendChild(nm); td1.appendChild(sub2);
+      var td2=document.createElement('td'); td2.textContent=fmtDate(ev.date);
+      var td3=document.createElement('td'); var b=document.createElement('span'); b.className='badge '+u.cls; b.textContent=u.txt; td3.appendChild(b);
+      tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody); lc.appendChild(tbl);
+  }
+}
+function showCalDay(day,evs,d){
+  if(!evs||evs.length===0){ openNewEvent(null); return; }
+  var ov=mkOv(); var box=mkBox();
+  box.appendChild(mkMoHd(day+'.'+(calM+1)+'.'+calY,ov));
+  var body=document.createElement('div'); body.className='mo-body';
+  body.appendChild(buildEvTable(evs,d,true));
+  box.appendChild(body);
+  var ft=document.createElement('div'); ft.className='mo-footer';
+  var cl=document.createElement('button'); cl.className='btn'; cl.textContent=T('סגור','Close');
+  cl.onclick=function(){ document.body.removeChild(ov); };
+  ft.appendChild(cl); box.appendChild(ft);
+  ov.appendChild(box); ov.onclick=function(e){ if(e.target===ov) document.body.removeChild(ov); };
+  document.body.appendChild(ov);
+}
+
+/* ══ LAWS ══ */
+function renderLaws(){
+  var card=document.getElementById('laws-card'); card.innerHTML='';
+  card.appendChild(mkCardHd(T('תקנות סדר הדין האזרחי התשע"ט-2018','Civil Procedure Rules 2018'),null));
+  LAWS.forEach(function(law){
+    var item=document.createElement('div'); item.className='law-item';
+    var left=document.createElement('div');
+    var nm=document.createElement('div'); nm.className='law-name'; nm.textContent=T(law.he,law.en);
+    var ref=document.createElement('div'); ref.className='law-ref'; ref.textContent=law.ref;
+    var desc=document.createElement('div'); desc.className='law-desc'; desc.textContent=T(law.dh,law.de);
+    left.appendChild(nm); left.appendChild(ref); left.appendChild(desc);
+    var right=document.createElement('div'); right.className='law-days-box';
+    var dn=document.createElement('div'); dn.className='law-days-num';
+    dn.textContent=law.days>0?String(law.days):'—';
+    var dl=document.createElement('div'); dl.className='law-days-lbl';
+    dl.textContent=law.days>0?T('יום','days'):'';
+    right.appendChild(dn); right.appendChild(dl);
+    item.appendChild(left); item.appendChild(right); card.appendChild(item);
+  });
+}
+
+/* ══ ALERTS ══ */
+function renderAlerts(){
+  var cfg=document.getElementById('alert-cfg-card'); cfg.innerHTML='';
+  cfg.appendChild(mkCardHd(T('הגדרות התראות','Alert Settings'),null));
+  var wrap=document.createElement('div');
+  [{k:'a7',v:a7,l:T('התראה 7 ימים מראש','Alert 7 days ahead')},{k:'a3',v:a3,l:T('התראה 3 ימים מראש','Alert 3 days ahead')},{k:'a1',v:a1,l:T('התראה יום לפני','Alert 1 day before')}].forEach(function(s){
+    var row=document.createElement('div'); row.className='tog-row';
+    var lbl=document.createElement('span'); lbl.className='tog-lbl'; lbl.textContent=s.l;
+    var tog=document.createElement('div'); tog.className='tog'+(s.v?' on':'');
+    var knob=document.createElement('div'); knob.className='tog-k'; tog.appendChild(knob);
+    tog.onclick=function(){
+      if(s.k==='a7') a7=!a7; else if(s.k==='a3') a3=!a3; else a1=!a1;
+      saveCfg(); renderAlerts();
+    };
+    row.appendChild(lbl); row.appendChild(tog); wrap.appendChild(row);
+  });
+  cfg.appendChild(wrap);
+  var lc=document.getElementById('alert-list-card'); lc.innerHTML='';
+  lc.appendChild(mkCardHd(T('התראות פעילות','Active Alerts'),null));
+  var d=getData(); var items=[];
+  d.events.forEach(function(ev){
+    if(!ev.date) return;
+    var dy=daysTo(ev.date);
+    if((a1&&dy>=0&&dy<=1)||(a3&&dy>=0&&dy<=3)||(a7&&dy>=0&&dy<=7)) items.push(ev);
+  });
+  items.sort(function(a,b){ return a.date.localeCompare(b.date); });
+  if(items.length===0){ lc.appendChild(mkEmpty('🔔',T('אין התראות פעילות','No active alerts'))); return; }
+  items.forEach(function(ev){
+    var c2=d.cases.find(function(x){ return x.id===ev.caseId; });
+    var dy=daysTo(ev.date); var u=urgBadge(dy);
+    var row=document.createElement('div'); row.className='alert-row';
+    var icon=document.createElement('div'); icon.className='alert-icon';
+    icon.style.background=dy<=1?'var(--red-s)':dy<=3?'var(--amber-s)':'var(--acc-s)';
+    icon.textContent=dy<=1?'🔴':dy<=3?'🟡':'🔵';
+    var body=document.createElement('div'); body.className='alert-body';
+    var t=document.createElement('div'); t.className='alert-title'; t.textContent=ev.title;
+    var s=document.createElement('div'); s.className='alert-sub';
+    s.textContent=(c2?c2.name+' · ':'')+fmtDate(ev.date)+(ev.ref?' · '+ev.ref:'');
+    body.appendChild(t); body.appendChild(s);
+    var badge=document.createElement('span'); badge.className='badge '+u.cls; badge.textContent=u.txt;
+    row.appendChild(icon); row.appendChild(body); row.appendChild(badge); lc.appendChild(row);
+  });
+}
+
+/* ══ REPORTS ══ */
+function renderReports(){
+  buildFbar('rep-fbar',repF,function(v){ repF=v; },renderRepContent);
+  renderRepContent();
+}
+function renderRepContent(){
+  var d=getData();
+  var evs=d.events.filter(function(ev){ return ev.date; });
+  var filtered=filterEvs(evs,repF);
+  var overdue=evs.filter(function(ev){ return daysTo(ev.date)<0; });
+  var sg=document.getElementById('rep-stats'); sg.innerHTML='';
+  [{n:d.cases.length,l:T('תיקים','Cases'),s:''},{n:filtered.length,l:T('בטווח','In Range'),s:''},{n:overdue.length,l:T('חרגו','Overdue'),s:''},{n:evs.length,l:T('סה"כ אירועים','Total Events'),s:''}].forEach(function(it){
+    var c2=document.createElement('div'); c2.className='stat-card';
+    var l=document.createElement('div'); l.className='stat-label'; l.textContent=it.l;
+    var n=document.createElement('div'); n.className='stat-num'; n.textContent=it.n;
+    c2.appendChild(l); c2.appendChild(n); sg.appendChild(c2);
+  });
+  var cc=document.getElementById('rep-chart-card'); cc.innerHTML='';
+  cc.appendChild(mkCardHd(T('אירועים — 12 חודשים אחרונים','Events — Last 12 Months'),null));
+  var now=new Date(); var months=[];
+  for(var i=11;i>=0;i--){ var dd=new Date(now.getFullYear(),now.getMonth()-i,1); months.push({y:dd.getFullYear(),m:dd.getMonth(),count:0}); }
+  evs.forEach(function(ev){ var p=ev.date.split('-'); var ey=parseInt(p[0]); var em=parseInt(p[1])-1; months.forEach(function(mo){ if(mo.y===ey&&mo.m===em) mo.count++; }); });
+  var maxC=1; months.forEach(function(mo){ if(mo.count>maxC) maxC=mo.count; });
+  var cw=document.createElement('div'); cw.className='chart-wrap';
+  var bars=document.createElement('div'); bars.className='chart-bars';
+  var lbls=document.createElement('div'); lbls.className='chart-xl';
+  var cy=now.getFullYear(); var cm=now.getMonth();
+  months.forEach(function(mo){
+    var bar=document.createElement('div'); bar.className='chart-bar'+(mo.y===cy&&mo.m===cm?' cur':'');
+    bar.style.height=Math.round((mo.count/maxC)*100)+'%'; bars.appendChild(bar);
+    var l=document.createElement('span'); l.textContent=(mo.m+1)+'/'+String(mo.y).slice(2); lbls.appendChild(l);
+  });
+  cw.appendChild(bars); cw.appendChild(lbls); cc.appendChild(cw);
+  var lc=document.getElementById('rep-list-card'); lc.innerHTML='';
+  lc.appendChild(mkCardHd(T('רשימה מפורטת','Detailed List'),null));
+  var sorted=filtered.slice().sort(function(a,b){ return a.date.localeCompare(b.date); });
+  if(sorted.length===0){ lc.appendChild(mkEmpty('📋',T('אין מועדים','No deadlines'))); }
+  else lc.appendChild(buildEvTable(sorted,d,false));
+}
+function exportPDF(){
+  var d=getData(); var un=uname||T('עורך דין','Lawyer');
+  var w=window.open('','_blank');
+  var rows=d.events.filter(function(ev){ return ev.date; }).sort(function(a,b){ return a.date.localeCompare(b.date); }).map(function(ev){
+    var c=d.cases.find(function(x){ return x.id===ev.caseId; });
+    return '<tr><td>'+ev.title+'</td><td>'+(c?c.name:'')+'</td><td>'+fmtDate(ev.date)+'</td><td>'+(ev.ref||'')+'</td><td>'+daysTo(ev.date)+'</td></tr>';
+  }).join('');
+  w.document.write('<!DOCTYPE html><html dir="'+(lang==='he'?'rtl':'ltr')+'"><head><meta charset="UTF-8"><title>LexCalendar</title><style>body{font-family:Arial;padding:24px;direction:'+(lang==='he'?'rtl':'ltr')+'}h1{color:#185FA5}p{color:#8a99aa;font-size:12px;margin-bottom:16px}table{width:100%;border-collapse:collapse;font-size:12px}th{background:#0f2744;color:#fff;padding:10px;text-align:right}td{border:1px solid #e2e8f0;padding:9px}</style></head><body><h1>⚖️ LexCalendar</h1><p>'+T('עורך דין: ','Lawyer: ')+un+' &nbsp;|&nbsp; '+new Date().toLocaleDateString('he-IL')+'</p><table><thead><tr><th>'+T('כותרת','Title')+'</th><th>'+T('תיק','Case')+'</th><th>'+T('תאריך','Date')+'</th><th>'+T('תקנה','Rule')+'</th><th>'+T('ימים','Days')+'</th></tr></thead><tbody>'+rows+'</tbody></table></body></html>');
+  w.document.close(); w.print();
+}
+function exportCSV(){
+  var d=getData(); var un=uname||T('עורך דין','Lawyer');
+  var bom='\uFEFF';
+  var hdr=T('כותרת,תיק,תאריך,תקנה,ימים שנותרו','Title,Case,Date,Rule,Days Left')+'\n';
+  var rows=d.events.filter(function(ev){ return ev.date; }).map(function(ev){
+    var c=d.cases.find(function(x){ return x.id===ev.caseId; });
+    return [ev.title,c?c.name:'',fmtDate(ev.date),ev.ref||'',daysTo(ev.date)].join(',');
+  }).join('\n');
+  var blob=new Blob([bom+hdr+rows],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob); var a=document.createElement('a');
+  a.href=url; a.download='LexCalendar_'+un+'_'+today()+'.csv'; a.click();
+  URL.revokeObjectURL(url); toast(T('CSV הורד','CSV downloaded'));
+}
+
+/* ══ SETTINGS ══ */
+function renderSettings(){
+  var el=document.getElementById('set-rows'); el.innerHTML='';
+  [{icon:'🌐',l:T('שפה','Language'),v:lang==='he'?'עברית':'English',a:function(){ toggleLang(); }},
+   {icon:'🎨',l:T('עיצוב','Design'),v:'',a:function(){ go('pg-design'); }},
+   {icon:'📋',l:T('מדריך','Guide'),v:'',a:showGuide},
+   {icon:'💾',l:T('גיבוי','Backup'),v:'',a:doBackup},
+   {icon:'📂',l:T('שחזור','Restore'),v:'',a:doRestore},
+   {icon:'ℹ️',l:T('אודות','About'),v:'',a:function(){ go('pg-about'); }}
+  ].forEach(function(r){
+    var row=document.createElement('div'); row.className='set-row';
+    var lft=document.createElement('div'); lft.className='set-lbl';
+    var ic=document.createElement('span'); ic.className='set-icon'; ic.textContent=r.icon;
+    var lbl=document.createElement('span'); lbl.textContent=r.l;
+    lft.appendChild(ic); lft.appendChild(lbl);
+    var rgt=document.createElement('div'); rgt.className='set-right';
+    if(r.v){ var vl=document.createElement('span'); vl.className='set-val'; vl.textContent=r.v; rgt.appendChild(vl); }
+    var arr=document.createElement('span'); arr.className='set-arr'; arr.textContent='›';
+    rgt.appendChild(arr); row.appendChild(lft); row.appendChild(rgt); row.onclick=r.a;
+    el.appendChild(row);
+  });
+  var intCard=document.getElementById('set-integrations'); intCard.innerHTML='';
+  intCard.appendChild(mkCardHd(T('חיבורים חיצוניים','Integrations'),null));
+  [{icon:'📅',l:'Google Calendar',s:T('סנכרון מועדים','Sync deadlines')},{icon:'📁',l:'Google Drive',s:T('גיבוי אוטומטי','Auto backup')},{icon:'📧',l:'Gmail',s:T('שליחת תזכורות','Send reminders')},{icon:'💬',l:'WhatsApp',s:T('התראות','Alerts')}].forEach(function(it){
+    var row=document.createElement('div'); row.className='set-row';
+    var lft=document.createElement('div'); lft.className='set-lbl';
+    var ic=document.createElement('span'); ic.className='set-icon'; ic.textContent=it.icon;
+    var info=document.createElement('div');
+    var l=document.createElement('div'); l.textContent=it.l;
+    var s=document.createElement('div'); s.style.cssText='font-size:11px;color:var(--txt3);'; s.textContent=it.s;
+    info.appendChild(l); info.appendChild(s); lft.appendChild(ic); lft.appendChild(info);
+    var rgt=document.createElement('div'); rgt.className='set-right';
+    var soon=document.createElement('span'); soon.className='badge b-gray'; soon.textContent=T('בקרוב','Soon');
+    rgt.appendChild(soon); row.appendChild(lft); row.appendChild(rgt);
+    intCard.appendChild(row);
+  });
+}
+function doBackup(){
+  var blob=new Blob([JSON.stringify({ver:VER,date:today(),uname:uname,data:getData()})],{type:'application/json'});
+  var url=URL.createObjectURL(blob); var a=document.createElement('a');
+  a.href=url; a.download='LexCalendar_backup_'+today()+'.json'; a.click();
+  URL.revokeObjectURL(url); toast(T('גיבוי הורד','Backup downloaded'));
+}
+function doRestore(){
+  var inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
+  inp.onchange=function(){
+    var f=inp.files[0]; if(!f) return;
+    var r=new FileReader();
+    r.onload=function(e){
+      try{ var o=JSON.parse(e.target.result); saveData(o.data||o); if(o.uname){ uname=o.uname; saveCfg(); } toast(T('שוחזר!','Restored!')); renderDash(); }
+      catch(x){ toast(T('קובץ לא תקין','Invalid file')); }
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+function confirmDelAll(){
+  var ov=mkOv(); var box=mkBox();
+  box.appendChild(mkMoHd(T('מחיקת כל הנתונים','Delete All Data'),ov));
+  var body=document.createElement('div'); body.className='mo-body';
+  var p=document.createElement('p'); p.style.cssText='font-size:13px;color:var(--txt2);margin-bottom:16px;';
+  p.textContent=T('פעולה זו תמחק לצמיתות את כל התיקים והמועדים.','This will permanently delete all cases and deadlines.');
+  var del=document.createElement('button'); del.className='btn btn-danger btn-full';
+  del.textContent=T('מחק הכל לצמיתות','Delete Everything');
+  del.onclick=function(){
+    saveData({cases:[],events:[]}); document.body.removeChild(ov);
+    toast(T('נמחק הכל','All deleted')); renderDash();
+  };
+  body.appendChild(p); body.appendChild(del); box.appendChild(body);
+  var ft=document.createElement('div'); ft.className='mo-footer';
+  var cl=document.createElement('button'); cl.className='btn'; cl.textContent=T('ביטול','Cancel');
+  cl.onclick=function(){ document.body.removeChild(ov); };
+  ft.appendChild(cl); box.appendChild(ft);
+  ov.appendChild(box); ov.onclick=function(e){ if(e.target===ov) document.body.removeChild(ov); };
+  document.body.appendChild(ov);
+}
+
+/* ══ DESIGN ══ */
+function renderDesign(){
+  var el=document.getElementById('theme-list'); el.innerHTML='';
+  var hd=mkCardHd(T('ערכת צבעים','Color Theme'),null); el.appendChild(hd);
+  THEMES.forEach(function(th){
+    var row=document.createElement('div'); row.className='theme-row'+(theme===th.k?' on':'');
+    var sw=document.createElement('div'); sw.className='theme-swatch'; sw.style.background=th.c;
+    var nm=document.createElement('div'); nm.className='theme-name'; nm.textContent=T(th.he,th.en);
+    row.appendChild(sw); row.appendChild(nm);
+    if(theme===th.k){ var ck=document.createElement('span'); ck.className='theme-chk'; ck.textContent='✓'; row.appendChild(ck); }
+    row.onclick=function(){ theme=th.k; applyTheme(); saveCfg(); renderDesign(); toast(T('ערכה הוחלה','Theme applied')); };
+    el.appendChild(row);
+  });
+}
+
+/* ══ SHARE ══ */
+function shareApp(){
+  var msg=T('ניהול מועדים משפטיים לעורכי דין — LexCalendar ⚖️','Legal deadline management for lawyers — LexCalendar ⚖️');
+  var url=window.location.href;
+  if(navigator.share){ navigator.share({title:'LexCalendar',text:msg,url:url}).catch(function(){}); return; }
+  var ov=mkOv(); var box=mkBox();
+  box.appendChild(mkMoHd(T('שתף אפליקציה','Share App'),ov));
+  var body=document.createElement('div'); body.className='mo-body';
+  [{l:'WhatsApp',h:'https://wa.me/?text='+encodeURIComponent(msg+' '+url)},
+   {l:'Telegram',h:'https://t.me/share/url?url='+encodeURIComponent(url)+'&text='+encodeURIComponent(msg)},
+   {l:T('מייל','Email'),h:'mailto:?subject=LexCalendar&body='+encodeURIComponent(msg+'\n'+url)}
+  ].forEach(function(op){
+    var a=document.createElement('a'); a.href=op.h; a.target='_blank';
+    a.className='btn btn-full'; a.style.textDecoration='none'; a.style.display='flex'; a.textContent=op.l;
+    body.appendChild(a);
+  });
+  var cp=document.createElement('button'); cp.className='btn btn-full'; cp.textContent=T('📋 העתק קישור','📋 Copy Link');
+  cp.onclick=function(){ if(navigator.clipboard) navigator.clipboard.writeText(url); toast(T('הועתק','Copied')); };
+  body.appendChild(cp); box.appendChild(body);
+  var ft=document.createElement('div'); ft.className='mo-footer';
+  var cl=document.createElement('button'); cl.className='btn'; cl.textContent=T('סגור','Close');
+  cl.onclick=function(){ document.body.removeChild(ov); };
+  ft.appendChild(cl); box.appendChild(ft);
+  ov.appendChild(box); ov.onclick=function(e){ if(e.target===ov) document.body.removeChild(ov); };
+  document.body.appendChild(ov);
+}
+
+/* ══ GUIDE ══ */
+var gStep=0;
+var GSTEPS=[
+  {icon:'⚖️',ht:'ברוכים הבאים ל-LexCalendar',et:'Welcome to LexCalendar',hd:'יומן מועדים חכם לעורכי דין ישראלים, מבוסס על תקנות סדר הדין האזרחי התשע"ט-2018.',ed:'Smart legal calendar for Israeli lawyers, based on Civil Procedure Rules 2018.'},
+  {icon:'📁',ht:'יצירת תיק',et:'Create a Case',hd:'הוסף תיק עם תאריך המצאה — המועדים נחשבים אוטומטית לפי סוג ההליך.',ed:'Add a case with service date — deadlines are auto-calculated per procedure type.'},
+  {icon:'⏰',ht:'מועדים ודחיפות',et:'Deadlines & Urgency',hd:'אדום = דחוף (0-2 ימים) · צהוב = השבוע (3-7) · ירוק = בסדר. ניתן לסנן בכל טווח.',ed:'Red = urgent (0-2d) · Amber = this week (3-7d) · Green = ok. Filter by any range.'},
+  {icon:'🔔',ht:'התראות',et:'Alerts',hd:'קבל התראות 7, 3, ויום לפני כל מועד. ניתן להגדיר בדף ההתראות.',ed:'Get alerts 7, 3, and 1 day before each deadline. Configure in Alerts.'},
+  {icon:'📅',ht:'יומן',et:'Calendar',hd:'צפה בכל המועדים על לוח חודשי. נקודות צבעוניות מסמנות דחיפות.',ed:'View all deadlines on a monthly calendar. Colored dots show urgency.'},
+  {icon:'🚀',ht:'מוכן!',et:"Let's Go!",hd:'לחץ "+ תיק חדש" כדי להתחיל. הנתונים שמורים על המכשיר שלך בלבד.',ed:'Click "+ New Case" to start. All data is stored only on your device.'}
+];
+function showGuide(){
+  gStep=0; document.getElementById('gw').classList.add('on'); renderGStep();
+}
+function renderGStep(){
+  var box=document.getElementById('gb'); box.innerHTML='';
+  var step=GSTEPS[gStep];
+  var hd=document.createElement('div'); hd.className='g-hd';
+  var ic=document.createElement('div'); ic.className='g-icon'; ic.textContent=step.icon;
+  var ti=document.createElement('div'); ti.className='g-title'; ti.textContent=T(step.ht,step.et);
+  hd.appendChild(ic); hd.appendChild(ti);
+  var body=document.createElement('div'); body.className='g-body';
+  var ds=document.createElement('div'); ds.className='g-desc'; ds.textContent=T(step.hd,step.ed);
+  var dots=document.createElement('div'); dots.className='g-dots';
+  GSTEPS.forEach(function(s,i){ var d=document.createElement('div'); d.className='g-dot'+(i===gStep?' on':''); dots.appendChild(d); });
+  var btns=document.createElement('div'); btns.className='g-btns';
+  var skip=document.createElement('button'); skip.className='btn'; skip.style.flex='1';
+  skip.textContent=T('דלג','Skip');
+  skip.onclick=function(){ document.getElementById('gw').classList.remove('on'); localStorage.setItem(APP+'_fr','1'); };
+  var next=document.createElement('button'); next.className='btn btn-primary'; next.style.flex='2';
+  if(gStep<GSTEPS.length-1){ next.textContent=T('הבא ›','Next ›'); next.onclick=function(){ gStep++; renderGStep(); }; }
+  else { next.textContent=T('בואו נתחיל! 🚀',"Let's Go! 🚀"); next.onclick=function(){ document.getElementById('gw').classList.remove('on'); localStorage.setItem(APP+'_fr','1'); }; }
+  btns.appendChild(skip); btns.appendChild(next);
+  body.appendChild(ds); body.appendChild(dots); body.appendChild(btns);
+  box.appendChild(hd); box.appendChild(body);
+}
+
+/* ══ HELPERS ══ */
+function mkOv(){ var o=document.createElement('div'); o.className='mo'; return o; }
+function mkBox(){ var b=document.createElement('div'); b.className='mo-box'; return b; }
+function mkMoHd(title,ov){
+  var hd=document.createElement('div'); hd.className='mo-hd';
+  var t=document.createElement('div'); t.className='mo-title'; t.textContent=title;
+  hd.appendChild(t);
+  if(ov){ var cl=document.createElement('button'); cl.className='mo-close'; cl.textContent='✕'; cl.onclick=function(){ document.body.removeChild(ov); }; hd.appendChild(cl); }
+  return hd;
+}
+function mkCardHd(title,action){
+  var wrap=document.createElement('div');
+  var hd=document.createElement('div'); hd.className='card-hd';
+  var t=document.createElement('div'); t.className='card-hd-t'; t.textContent=title;
+  hd.appendChild(t);
+  if(action){
+    var btn=document.createElement('button'); btn.className='btn btn-sm';
+    btn.textContent=T('הצג הכל','View All'); btn.onclick=action; hd.appendChild(btn);
+  }
+  wrap.appendChild(hd); return wrap;
+}
+function mkEmpty(icon,title,sub){
+  var el=document.createElement('div'); el.className='empty';
+  var ic=document.createElement('span'); ic.className='empty-icon'; ic.textContent=icon;
+  var t=document.createElement('div'); t.className='empty-t'; t.textContent=title;
+  el.appendChild(ic); el.appendChild(t);
+  if(sub){ var s=document.createElement('div'); s.style.fontSize='12px'; s.textContent=sub; el.appendChild(s); }
+  return el;
+}
+function mkFld(lbl,type){
+  var w=document.createElement('div'); w.className='fg';
+  var l=document.createElement('label'); l.className='fl'; l.textContent=lbl;
+  var i=document.createElement('input'); i.type=type;
+  w.appendChild(l); w.appendChild(i); return {w:w,i:i};
+}
+function mkSel(lbl,opts){
+  var w=document.createElement('div'); w.className='fg';
+  var l=document.createElement('label'); l.className='fl'; l.textContent=lbl;
+  var i=document.createElement('select');
+  opts.forEach(function(o){ var op=document.createElement('option'); op.value=o.k; op.textContent=T(o.he,o.en); i.appendChild(op); });
+  w.appendChild(l); w.appendChild(i); return {w:w,i:i};
+}
+function mkTa(lbl){
+  var w=document.createElement('div'); w.className='fg';
+  var l=document.createElement('label'); l.className='fl'; l.textContent=lbl;
+  var i=document.createElement('textarea'); i.rows=2;
+  w.appendChild(l); w.appendChild(i); return {w:w,i:i};
+}
+
+/* ══ INIT ══ */
+function init(){
+  loadCfg(); applyTheme(); buildSidebar();
+  if(!localStorage.getItem(APP+'_fr')) showGuide();
+  renderDash(); applyLbls();
+}
+init();
+</script>
+</body>
+</html>
