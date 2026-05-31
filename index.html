@@ -311,6 +311,7 @@ body.en #toast{right:auto;left:50%;transform:translateX(-50%);}
         <button class="ib" onclick="go('pg-design')"><span class="ib-icon">🎨</span></button>
         <button class="ib" onclick="shareApp()"><span class="ib-icon">📣</span></button>
         <button class="tb-btn" id="tb-action-btn" onclick="openNewCase()"></button>
+        <button class="tb-btn" style="background:var(--green);margin-right:6px;" onclick="openGcalModal()" title="סנכרון Google Calendar">📅</button>
       </div>
     </div>
 
@@ -863,9 +864,15 @@ function buildEvTable(evs,d,showEdit){
     tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4);
     if(showEdit){
       var td5=document.createElement('td');
+      td5.style.whiteSpace='nowrap';
       var eb=document.createElement('button'); eb.className='btn btn-sm'; eb.textContent='✏️';
       eb.onclick=function(){ openEditEvent(ev.id); };
-      td5.appendChild(eb); tr.appendChild(td5);
+      var gcalBtn=document.createElement('button'); gcalBtn.className='btn btn-sm';
+      gcalBtn.style.marginRight='4px'; gcalBtn.textContent='📅';
+      gcalBtn.title=T('הוסף ליומן Google','Add to Google Calendar');
+      var evRef=ev; var cRef=c2;
+      gcalBtn.onclick=function(){ addEventToGcal(evRef, cRef?cRef.name:''); };
+      td5.appendChild(gcalBtn); td5.appendChild(eb); tr.appendChild(td5);
     }
     var lp;
     tr.addEventListener('mousedown',function(){ lp=setTimeout(function(){ openEditEvent(ev.id); },600); });
@@ -1282,8 +1289,9 @@ function exportCSV(){
 /* ══ SETTINGS ══ */
 function renderSettings(){
   var el=document.getElementById('set-rows'); el.innerHTML='';
-  [{icon:'🌐',l:T('שפה','Language'),v:lang==='he'?'עברית':'English',a:function(){ toggleLang(); }},
+  [{icon:'🌐',l:T('שפה','Language'),v:lang==='he'?'עברית':'English',a:function(){ toggleLang(); renderSettings(); }},
    {icon:'🎨',l:T('עיצוב','Design'),v:'',a:function(){ go('pg-design'); }},
+   {icon:'📅',l:T('Google Calendar','Google Calendar'),v:gcalToken?T('מחובר ✅','Connected ✅'):T('לא מחובר','Not connected'),a:function(){ openGcalModal(); }},
    {icon:'📋',l:T('מדריך','Guide'),v:'',a:showGuide},
    {icon:'💾',l:T('גיבוי','Backup'),v:'',a:doBackup},
    {icon:'📂',l:T('שחזור','Restore'),v:'',a:doRestore},
@@ -1483,9 +1491,174 @@ function mkTa(lbl){
   w.appendChild(l); w.appendChild(i); return {w:w,i:i};
 }
 
+/* ══ GOOGLE CALENDAR INTEGRATION ══ */
+var GCAL_CLIENT_ID = '103222021522-p5pf90jrnn2bu775nhbec9jna8c4c1b.apps.googleusercontent.com';
+var GCAL_SCOPES = 'https://www.googleapis.com/auth/calendar.events';
+var gcalReady = false;
+var gcalToken = null;
+
+function loadGoogleApi(){
+  var script = document.createElement('script');
+  script.src = 'https://accounts.google.com/gsi/client';
+  script.onload = function(){ gcalReady = true; };
+  document.head.appendChild(script);
+}
+
+function gcalSignIn(callback){
+  if(!gcalReady){
+    toast(T('Google API לא נטען עדיין, נסה שוב','Google API not ready, try again'));
+    return;
+  }
+  var client = google.accounts.oauth2.initTokenClient({
+    client_id: GCAL_CLIENT_ID,
+    scope: GCAL_SCOPES,
+    callback: function(resp){
+      if(resp.error){ toast(T('שגיאת התחברות לGoogle','Google sign-in error')); return; }
+      gcalToken = resp.access_token;
+      toast(T('מחובר ל-Google Calendar ✅','Connected to Google Calendar ✅'));
+      if(callback) callback();
+    }
+  });
+  client.requestAccessToken();
+}
+
+function addEventToGcal(ev, caseName){
+  if(!gcalToken){ gcalSignIn(function(){ addEventToGcal(ev, caseName); }); return; }
+  if(!ev.date){ toast(T('אין תאריך לאירוע זה','No date for this event')); return; }
+  var title = ev.title + (caseName ? ' — ' + caseName : '');
+  var desc = ev.ref ? T('תקנה: ','Rule: ') + ev.ref : '';
+  var body = JSON.stringify({
+    summary: title,
+    description: desc,
+    start: { date: ev.date },
+    end: { date: ev.date },
+    reminders: {
+      useDefault: false,
+      overrides: [
+        { method: 'popup', minutes: 1440 },
+        { method: 'popup', minutes: 4320 },
+        { method: 'email', minutes: 10080 }
+      ]
+    }
+  });
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST','https://www.googleapis.com/calendar/v3/calendars/primary/events');
+  xhr.setRequestHeader('Authorization','Bearer ' + gcalToken);
+  xhr.setRequestHeader('Content-Type','application/json');
+  xhr.onload = function(){
+    if(xhr.status === 200 || xhr.status === 201){
+      toast(T('נוסף ליומן Google! 📅','Added to Google Calendar! 📅'));
+    } else {
+      gcalToken = null;
+      toast(T('שגיאה — נסה להתחבר מחדש','Error — try reconnecting'));
+    }
+  };
+  xhr.onerror = function(){ toast(T('שגיאת רשת','Network error')); };
+  xhr.send(body);
+}
+
+function syncAllToGcal(){
+  if(!gcalToken){ gcalSignIn(function(){ syncAllToGcal(); }); return; }
+  var d = getData();
+  var evs = d.events.filter(function(ev){ return ev.date && daysTo(ev.date) >= 0; });
+  if(evs.length === 0){ toast(T('אין מועדים עתידיים לסנכרן','No upcoming deadlines to sync')); return; }
+  var count = 0;
+  evs.forEach(function(ev){
+    var c = d.cases.find(function(x){ return x.id === ev.caseId; });
+    addEventToGcalSilent(ev, c ? c.name : '', function(ok){
+      count++;
+      if(count === evs.length){
+        toast(T('סונכרנו ' + evs.length + ' מועדים ✅', evs.length + ' deadlines synced ✅'));
+      }
+    });
+  });
+}
+
+function addEventToGcalSilent(ev, caseName, callback){
+  var title = ev.title + (caseName ? ' — ' + caseName : '');
+  var desc = ev.ref ? T('תקנה: ','Rule: ') + ev.ref : '';
+  var body = JSON.stringify({
+    summary: title,
+    description: desc,
+    start: { date: ev.date },
+    end: { date: ev.date },
+    reminders: {
+      useDefault: false,
+      overrides: [
+        { method: 'popup', minutes: 1440 },
+        { method: 'popup', minutes: 4320 },
+        { method: 'email', minutes: 10080 }
+      ]
+    }
+  });
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST','https://www.googleapis.com/calendar/v3/calendars/primary/events');
+  xhr.setRequestHeader('Authorization','Bearer ' + gcalToken);
+  xhr.setRequestHeader('Content-Type','application/json');
+  xhr.onload = function(){ if(callback) callback(xhr.status === 200 || xhr.status === 201); };
+  xhr.onerror = function(){ if(callback) callback(false); };
+  xhr.send(body);
+}
+
+function openGcalModal(){
+  var ov = mkOv(); var box = mkBox();
+  box.appendChild(mkMoHd(T('חיבור Google Calendar','Google Calendar Sync'), ov));
+  var body = document.createElement('div'); body.className = 'mo-body';
+
+  var hero = document.createElement('div');
+  hero.style.cssText = 'text-align:center;padding:16px 0 20px;';
+  var icon = document.createElement('div'); icon.style.cssText = 'font-size:48px;margin-bottom:10px;'; icon.textContent = '📅';
+  var title = document.createElement('div'); title.style.cssText = 'font-size:16px;font-weight:700;color:var(--txt);margin-bottom:6px;';
+  title.textContent = T('סנכרון עם Google Calendar','Sync with Google Calendar');
+  var sub = document.createElement('div'); sub.style.cssText = 'font-size:13px;color:var(--txt2);line-height:1.6;';
+  sub.textContent = T('כל המועדים יתווספו אוטומטית ליומן Google שלך עם תזכורות.','All deadlines will be added to your Google Calendar with reminders.');
+  hero.appendChild(icon); hero.appendChild(title); hero.appendChild(sub);
+  body.appendChild(hero);
+
+  var div = document.createElement('div'); div.style.height = '1px'; div.style.background = 'var(--brd)'; div.style.margin = '0 0 16px';
+  body.appendChild(div);
+
+  var infoCard = document.createElement('div');
+  infoCard.style.cssText = 'background:var(--bg3);border-radius:var(--r);padding:12px 14px;margin-bottom:16px;';
+  var rows = [
+    {icon:'🔔', txt:T('תזכורת יום לפני כל מועד','Reminder 1 day before each deadline')},
+    {icon:'🔔', txt:T('תזכורת 3 ימים לפני','Reminder 3 days before')},
+    {icon:'📧', txt:T('תזכורת מייל שבוע לפני','Email reminder 1 week before')}
+  ];
+  rows.forEach(function(r){
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:13px;color:var(--txt2);margin-bottom:6px;';
+    row.innerHTML = '<span>' + r.icon + '</span><span>' + r.txt + '</span>';
+    infoCard.appendChild(row);
+  });
+  body.appendChild(infoCard);
+
+  var syncAllBtn = document.createElement('button'); syncAllBtn.className = 'btn btn-primary';
+  syncAllBtn.style.marginBottom = '8px';
+  syncAllBtn.textContent = T('📅 סנכרן את כל המועדים','📅 Sync All Deadlines');
+  syncAllBtn.onclick = function(){ document.body.removeChild(ov); syncAllToGcal(); };
+
+  var status = document.createElement('div');
+  status.style.cssText = 'font-size:12px;text-align:center;color:var(--txt3);margin-top:8px;';
+  status.textContent = gcalToken ? T('✅ מחובר ל-Google','✅ Connected to Google') : T('לא מחובר — לחץ לחיבור','Not connected — tap to connect');
+
+  body.appendChild(syncAllBtn);
+  body.appendChild(status);
+  box.appendChild(body);
+
+  var ft = document.createElement('div'); ft.className = 'mo-footer';
+  var cl = document.createElement('button'); cl.className = 'btn'; cl.textContent = T('סגור','Close');
+  cl.onclick = function(){ document.body.removeChild(ov); };
+  ft.appendChild(cl); box.appendChild(ft);
+  ov.appendChild(box);
+  ov.onclick = function(e){ if(e.target === ov) document.body.removeChild(ov); };
+  document.body.appendChild(ov);
+}
+
 /* ══ INIT ══ */
 function init(){
   loadCfg(); applyTheme(); buildSidebar();
+  loadGoogleApi();
   if(!localStorage.getItem(APP+'_fr')) showGuide();
   renderDash(); applyLbls();
 }
