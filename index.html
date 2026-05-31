@@ -227,9 +227,15 @@ body.en #toast{right:auto;left:50%;transform:translateX(-50%);}
 .chart-bar.cur{background:var(--acc);}
 .chart-xl{display:flex;gap:4px;margin-top:4px;}
 .chart-xl span{flex:1;font-size:9px;color:var(--txt3);text-align:center;}
-/* layout 3 hides main sidebar */
-body.layout3 #sb{display:none;}
-body.layout3 .main{margin-right:0!important;margin-left:0!important;}
+/* layout 3 - wider sidebar, no second sidebar */
+body.layout3 .sb{width:200px;}
+body.layout3 .main{margin-right:200px!important;}
+body.en.layout3 .main{margin-right:0!important;margin-left:200px!important;}
+/* layout 3 sections in sidebar */
+body.layout3 .sb-sec{display:block;}
+/* layout 2 hides main sidebar */
+body.layout2 #sb{display:none;}
+body.layout2 .main{margin-right:0!important;margin-left:0!important;}
 .dash-stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
 .dash-stat{background:var(--bg2);border:1px solid var(--brd);border-radius:var(--rl);padding:12px 14px;box-shadow:var(--sh);}
 .dash-stat-n{font-size:24px;font-weight:800;color:var(--txt);line-height:1;}
@@ -559,7 +565,7 @@ function loadCfg(){
 }
 function saveCfg(){ try{ localStorage.setItem(APP+'_cfg',JSON.stringify({lang:lang,theme:theme,uname:uname,uprof:uprof,a7:a7,a3:a3,a1:a1,uiLayout:uiLayout})); }catch(x){} }
 function applyTheme(){
-  var cls=(theme==='default'?'':theme)+(lang==='en'?' en':'')+(uiLayout===3?' layout3':'');
+  var cls=(theme==='default'?'':theme)+(lang==='en'?' en':'')+(uiLayout===2?' layout2':'')+(uiLayout===3?' layout3':'');
   document.body.className=cls;
 }
 function toast(msg,dur){ var e=document.getElementById('toast'); e.textContent=msg; e.style.display='block'; setTimeout(function(){ e.style.display='none'; },dur||2500); }
@@ -741,15 +747,36 @@ function applyLbls(){
 
 function buildSidebar(){
   var nav=document.getElementById('sb-nav'); nav.innerHTML='';
-  NAV.forEach(function(it){
-    var btn=document.createElement('button'); btn.className='sb-item'+(curPg===it.pg?' on':'');
-    btn.dataset.pg=it.pg;
-    var ic=document.createElement('span'); ic.className='sb-icon'; ic.textContent=it.icon;
-    var lbl=document.createElement('span'); lbl.className='sb-lbl'; lbl.textContent=T(it.he,it.en);
-    btn.appendChild(ic); btn.appendChild(lbl);
-    btn.onclick=function(){ go(it.pg); };
-    nav.appendChild(btn);
-  });
+  var NAV_SECTIONS=[
+    {sec:T('ראשי','Main'),items:[0,1,2,3,4]},
+    {sec:T('עבודה','Work'),items:[5,6]},
+    {sec:T('כלים','Tools'),items:[7,8,9,10,11]}
+  ];
+  if(uiLayout===3){
+    NAV_SECTIONS.forEach(function(section){
+      var sec=document.createElement('div'); sec.className='sb-sec'; sec.textContent=section.sec; nav.appendChild(sec);
+      section.items.forEach(function(idx){
+        var it=NAV[idx]; if(!it) return;
+        var btn=document.createElement('button'); btn.className='sb-item'+(curPg===it.pg?' on':'');
+        btn.dataset.pg=it.pg;
+        var ic=document.createElement('span'); ic.className='sb-icon'; ic.textContent=it.icon;
+        var lbl=document.createElement('span'); lbl.className='sb-lbl'; lbl.textContent=T(it.he,it.en);
+        btn.appendChild(ic); btn.appendChild(lbl);
+        btn.onclick=function(){ go(it.pg); };
+        nav.appendChild(btn);
+      });
+    });
+  } else {
+    NAV.forEach(function(it){
+      var btn=document.createElement('button'); btn.className='sb-item'+(curPg===it.pg?' on':'');
+      btn.dataset.pg=it.pg;
+      var ic=document.createElement('span'); ic.className='sb-icon'; ic.textContent=it.icon;
+      var lbl=document.createElement('span'); lbl.className='sb-lbl'; lbl.textContent=T(it.he,it.en);
+      btn.appendChild(ic); btn.appendChild(lbl);
+      btn.onclick=function(){ go(it.pg); };
+      nav.appendChild(btn);
+    });
+  }
   buildSidebarFooter();
 }
 function buildSidebarFooter(){
@@ -925,73 +952,21 @@ function renderDashL2(TILES,STATS,d,urgEvs){
 
 /* ── LAYOUT 3: Wide sidebar + 3-col large tiles ── */
 function renderDashL3(TILES,STATS,d,urgEvs){
-  var app=document.querySelector('.app');
-  if(app){
-    app.style.position='relative';
-  }
   var pg=document.getElementById('pg-dash'); pg.innerHTML='';
   pg.style.padding='0';
-  var L3NAV=[
-    {sec:T('ראשי','Main'),items:[
-      {he:'לוח בקרה',en:'Dashboard',pg:'pg-dash',icon:'⊞',badge:0},
-      {he:'לקוחות',en:'Clients',pg:'pg-clients',icon:'👤',badge:TILES[0].badge},
-      {he:'תיקים',en:'Cases',pg:'pg-cases',icon:'📁',badge:0},
-      {he:'מועדים',en:'Deadlines',pg:'pg-dl',icon:'⏰',badge:TILES[2].badge},
-      {he:'יומן',en:'Calendar',pg:'pg-cal',icon:'📅',badge:0}
-    ]},
-    {sec:T('עבודה','Work'),items:[
-      {he:'לוג פעולות',en:'Activity Log',pg:'pg-log',icon:'📋',badge:0},
-      {he:'שעות ושכר',en:'Hours & Fees',pg:'pg-hours',icon:'⌛',badge:TILES[5].badge}
-    ]},
-    {sec:T('כלים','Tools'),items:[
-      {he:'חוקי סד"פ',en:'Proc. Rules',pg:'pg-laws',icon:'⚖️',badge:0},
-      {he:'התראות',en:'Alerts',pg:'pg-alerts',icon:'🔔',badge:TILES[7].badge},
-      {he:'דוחות',en:'Reports',pg:'pg-rep',icon:'📊',badge:0},
-      {he:'מחשבון שכר',en:'Fee Calc',pg:'pg-calc',icon:'🧮',badge:0},
-      {he:'הגדרות',en:'Settings',pg:'pg-set',icon:'⚙️',badge:0}
-    ]}
-  ];
-  var shell=document.createElement('div'); shell.style.cssText='display:flex;flex-direction:row-reverse;min-height:calc(100vh - 54px);';
-  if(lang==='en') shell.style.flexDirection='row';
-  var sb=document.createElement('div'); sb.className='sb';
-  sb.style.cssText='width:200px;background:var(--sb);display:flex;flex-direction:column;position:sticky;top:54px;height:calc(100vh - 54px);overflow:hidden;';
-  var sbLogo=document.createElement('div'); sbLogo.style.cssText='padding:14px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;';
-  var sbMark=document.createElement('div'); sbMark.style.cssText='width:30px;height:30px;background:var(--acc);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;';
-  sbMark.textContent='⚖️';
-  var sbTexts=document.createElement('div');
-  var sbName=document.createElement('div'); sbName.style.cssText='font-size:13px;font-weight:800;color:#fff;'; sbName.textContent='LexCalendar';
-  var sbSub=document.createElement('div'); sbSub.style.cssText='font-size:9px;color:rgba(255,255,255,.4);'; sbSub.textContent=T('ניהול משפטי','Legal Mgmt');
-  sbTexts.appendChild(sbName); sbTexts.appendChild(sbSub); sbLogo.appendChild(sbMark); sbLogo.appendChild(sbTexts); sb.appendChild(sbLogo);
-  var sbNav=document.createElement('div'); sbNav.style.cssText='flex:1;overflow-y:auto;padding:6px 0;scrollbar-width:none;';
-  L3NAV.forEach(function(section){
-    var sec=document.createElement('div'); sec.style.cssText='font-size:9px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:.1em;text-transform:uppercase;padding:10px 14px 3px;'; sec.textContent=section.sec; sbNav.appendChild(sec);
-    section.items.forEach(function(it){
-      var item=document.createElement('button'); item.className='l3-sb-item'+(curPg===it.pg?' on':'');
-      var ico=document.createElement('span'); ico.style.cssText='font-size:14px;width:16px;text-align:center;'; ico.textContent=it.icon;
-      var lbl=document.createElement('span'); lbl.style.flex='1'; lbl.textContent=T(it.he,it.en);
-      item.appendChild(ico); item.appendChild(lbl);
-      if(it.badge){ var dot=document.createElement('span'); dot.style.cssText='margin-right:auto;margin-left:4px;min-width:15px;height:15px;border-radius:99px;background:var(--red);color:#fff;font-size:8px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;'; dot.textContent=it.badge; item.appendChild(dot); }
-      item.onclick=function(){ go(it.pg); };
-      sbNav.appendChild(item);
-    });
-  });
-  sb.appendChild(sbNav);
-  var sbFoot=document.createElement('div'); sbFoot.style.cssText='padding:10px 14px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:8px;cursor:pointer;';
-  var sbAv=document.createElement('div'); sbAv.style.cssText='width:28px;height:28px;background:var(--acc);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;'; sbAv.textContent=uname?uname.charAt(0).toUpperCase():'⚖';
-  var sbUn=document.createElement('div'); sbUn.style.cssText='font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'; sbUn.textContent=uname||T('עורך דין','Lawyer');
-  sbFoot.appendChild(sbAv); sbFoot.appendChild(sbUn); sbFoot.onclick=function(){ go('pg-set'); };
-  sb.appendChild(sbFoot);
-  var main=document.createElement('div'); main.style.cssText='flex:1;display:flex;flex-direction:column;min-width:0;';
-  var statsRow=document.createElement('div'); statsRow.style.cssText='display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--brd);';
-  STATS.forEach(function(it){
-    var c=document.createElement('div'); c.style.cssText='background:var(--bg2);padding:12px 14px;border-left:1px solid var(--brd);';
+  var statsRow=document.createElement('div');
+  statsRow.style.cssText='display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--brd);';
+  STATS.forEach(function(it,i){
+    var c=document.createElement('div');
+    c.style.cssText='background:var(--bg2);padding:12px 14px;'+(i<3?'border-'+(lang==='en'?'right':'left')+':1px solid var(--brd);':'');
     var n=document.createElement('div'); n.style.cssText='font-size:22px;font-weight:800;color:var(--txt);'; n.textContent=it.n;
     var l=document.createElement('div'); l.style.cssText='font-size:10px;color:var(--txt3);margin-top:2px;'; l.textContent=it.l;
     c.appendChild(n); c.appendChild(l); statsRow.appendChild(c);
   });
-  main.appendChild(statsRow);
-  var grid=document.createElement('div'); grid.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:14px;flex:1;';
-  TILES.slice(0,9).forEach(function(t){
+  pg.appendChild(statsRow);
+  var grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:14px;';
+  TILES.forEach(function(t){
     var tile=document.createElement('div'); tile.className='l3-tile';
     var top=document.createElement('div'); top.style.cssText='display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;';
     var ico=document.createElement('div'); ico.style.cssText='width:38px;height:38px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:20px;background:'+t.bg+';';
@@ -1004,8 +979,13 @@ function renderDashL3(TILES,STATS,d,urgEvs){
     tile.onclick=function(){ go(t.pg); };
     grid.appendChild(tile);
   });
-  main.appendChild(grid);
-  shell.appendChild(sb); shell.appendChild(main); pg.appendChild(shell);
+  pg.appendChild(grid);
+  if(urgEvs.length>0){
+    var urgSec=document.createElement('div'); urgSec.style.cssText='font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.04em;margin:0 14px 8px;'; urgSec.textContent=T('מועדים דחופים','Urgent Deadlines'); pg.appendChild(urgSec);
+    var urgCard=document.createElement('div'); urgCard.className='card'; urgCard.style.margin='0 14px 14px';
+    urgEvs.slice(0,4).forEach(function(ev){ urgCard.appendChild(mkEvRow(ev,d,false)); });
+    pg.appendChild(urgCard);
+  }
 }
 
 /* ══════════════════════════════════════
@@ -2042,7 +2022,7 @@ function renderDesign(){
     var nm=document.createElement('div'); nm.style.cssText='flex:1;font-size:13px;font-weight:500;color:var(--txt);'; nm.textContent=T(l.he,l.en);
     row.appendChild(num); row.appendChild(nm);
     if(uiLayout===l.n){ var ck=document.createElement('span'); ck.style.cssText='color:var(--acc);font-weight:700;font-size:16px;'; ck.textContent='✓'; row.appendChild(ck); }
-    row.onclick=function(){ uiLayout=l.n; saveCfg(); applyTheme(); var pg=document.getElementById('pg-dash'); pg.innerHTML=''; pg.style.padding=''; renderDesign(); renderDash(); go('pg-dash'); toast(T('סגנון הוחל','Layout applied')); };
+    row.onclick=function(){ uiLayout=l.n; saveCfg(); applyTheme(); var pg=document.getElementById('pg-dash'); pg.innerHTML=''; pg.style.padding=''; buildSidebar(); renderDesign(); renderDash(); go('pg-dash'); toast(T('סגנון הוחל','Layout applied')); };
     lc.appendChild(row);
   });
   var designPage=document.getElementById('pg-design');
