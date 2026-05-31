@@ -371,19 +371,7 @@ body.en .tile-badge{left:auto;right:8px;}
 </div>
 
 <!-- DASHBOARD -->
-<div class="pg on" id="pg-dash">
-  <div class="stats" id="dash-stats"></div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-    <div>
-      <div class="card" id="dash-urgent"></div>
-      <div class="card" id="dash-tl"></div>
-    </div>
-    <div>
-      <div class="card" id="dash-cases-card"></div>
-      <div class="card" id="dash-clients-card"></div>
-    </div>
-  </div>
-</div>
+<div class="pg on" id="pg-dash"></div>
 
 <!-- CLIENTS -->
 <div class="pg" id="pg-clients">
@@ -2049,7 +2037,7 @@ function renderDesign(){
     var nm=document.createElement('div'); nm.style.cssText='flex:1;font-size:13px;font-weight:500;color:var(--txt);'; nm.textContent=T(l.he,l.en);
     row.appendChild(num); row.appendChild(nm);
     if(uiLayout===l.n){ var ck=document.createElement('span'); ck.style.cssText='color:var(--acc);font-weight:700;font-size:16px;'; ck.textContent='✓'; row.appendChild(ck); }
-    row.onclick=function(){ uiLayout=l.n; saveCfg(); renderDesign(); renderDash(); toast(T('סגנון הוחל','Layout applied')); };
+    row.onclick=function(){ uiLayout=l.n; saveCfg(); renderDesign(); var pg=document.getElementById('pg-dash'); pg.innerHTML=''; pg.style.padding=''; renderDash(); toast(T('סגנון הוחל','Layout applied')); };
     lc.appendChild(row);
   });
   var designPage=document.getElementById('pg-design');
