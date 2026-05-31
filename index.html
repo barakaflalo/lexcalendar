@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#0d1f3c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LexCalendar">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>LexCalendar — מערכת ניהול משפטית</title>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -375,6 +382,7 @@ body.en .tile-badge{left:auto;right:8px;}
     <button class="ib" onclick="toggleLang()">🌐 <span id="lang-lbl">EN</span></button>
     <button class="ib" onclick="go('pg-design')">🎨</button>
     <button class="ib" onclick="shareApp()">📣</button>
+    <button class="ib" onclick="openAI()" id="tb-ai-btn" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-color:transparent;font-weight:700;">🤖 AI</button>
     <button class="ib ib-prim" id="tb-add-btn" onclick="openNewCase()">＋ תיק חדש</button>
   </div>
 </div>
@@ -423,9 +431,7 @@ body.en .tile-badge{left:auto;right:8px;}
 </div>
 
 <!-- LAWS -->
-<div class="pg" id="pg-laws">
-  <div class="card" id="laws-card"></div>
-</div>
+<div class="pg" id="pg-laws" style="padding:20px;"></div>
 
 <!-- ALERTS -->
 <div class="pg" id="pg-alerts">
@@ -770,18 +776,267 @@ var THEMES=[{k:'default',he:'כחול מקצועי',en:'Professional Blue',c:'#1
 var CASE_STATUS=[{k:'active',he:'פעיל',en:'Active'},{k:'closed',he:'סגור',en:'Closed'},{k:'hold',he:'מושהה',en:'On Hold'},{k:'new',he:'חדש',en:'New'}];
 var PAYMENT_STATUS=[{k:'pending',he:'ממתין',en:'Pending'},{k:'paid',he:'שולם',en:'Paid'},{k:'partial',he:'חלקי',en:'Partial'},{k:'overdue',he:'חוב',en:'Overdue'}];
 
-var LAWS=[
-  {days:30,ref:'תקנה 214ד',he:'כתב הגנה — סדר דין מהיר',en:'Defense — Fast Track',dh:'30 יום מהמצאת כתב התביעה',de:'30 days from service'},
-  {days:60,ref:'תקנה 51',he:'כתב הגנה — סדר דין רגיל',en:'Defense — Regular Track',dh:'60 יום מהמצאת כתב התביעה',de:'60 days from service'},
-  {days:45,ref:'תקנה 400',he:'ערעור על פסק דין',en:'Appeal',dh:'45 יום מיום פסק הדין',de:'45 days from judgment'},
-  {days:10,ref:'תקנה 369',he:'תגובה לבקשה (ימי עבודה)',en:'Response to Motion',dh:'10 ימי עבודה',de:'10 working days'},
-  {days:30,ref:'סעיף 52',he:'בקשת רשות ערעור',en:'Leave to Appeal',dh:'30 יום מההחלטה',de:'30 days from decision'},
-  {days:0,ref:'תקנה 371',he:'בקשת עיכוב ביצוע',en:'Stay of Execution',dh:'עם הגשת הערעור',de:'With the appeal'},
-  {days:30,ref:'חוק הוצל"פ',he:'פתיחת תיק הוצאה לפועל',en:'Enforcement File',dh:'30 יום לאחר פסק הדין',de:'30 days after judgment'},
-  {days:30,ref:'תקנה 55',he:'תביעה שכנגד',en:'Counterclaim',dh:'30 יום מהמצאה',de:'30 days from service'},
-  {days:14,ref:'תקנות תביעות קטנות',he:'תגובה — תביעות קטנות',en:'Small Claims Response',dh:'14 ימים מהמצאה',de:'14 days from service'},
-  {days:30,ref:'חוק בית הדין לעבודה',he:'ערעור — בית דין לעבודה',en:'Labor Court Appeal',dh:'30 יום מפסק הדין',de:'30 days from judgment'}
+var LAWS_CATS=[
+  {
+    id:'civil',icon:'📋',he:'סדר דין אזרחי',en:'Civil Procedure',
+    items:[
+      {days:60,ref:'תקנה 51',he:'כתב הגנה — סדר דין רגיל',dh:'60 יום מהמצאת כתב התביעה'},
+      {days:30,ref:'תקנה 214ד',he:'כתב הגנה — סדר דין מהיר',dh:'30 יום מהמצאת כתב התביעה'},
+      {days:30,ref:'תקנה 55',he:'תביעה שכנגד',dh:'30 יום מהמצאת כתב התביעה'},
+      {days:15,ref:'תקנה 57',he:'הגנה מפני תביעה שכנגד',dh:'15 יום מהמצאת התביעה שכנגד'},
+      {days:10,ref:'תקנה 369',he:'תגובה לבקשה (ימי עבודה)',dh:'10 ימי עבודה מקבלת הבקשה'},
+      {days:5,ref:'תקנה 370',he:'תגובה לבקשה דחופה',dh:'5 ימי עבודה מקבלת הבקשה'},
+      {days:20,ref:'תקנה 60',he:'תשובה לכתב הגנה',dh:'20 יום מהמצאת כתב ההגנה'},
+      {days:30,ref:'תקנה 78',he:'תיקון כתב טענות — לפני דיון',dh:'30 יום לפני מועד הדיון'},
+      {days:14,ref:'תקנה 112',he:'הגשת תצהירי עדות ראשית',dh:'14 יום לפני מועד השמעת ראיות'},
+      {days:21,ref:'תקנה 114',he:'הגשת חוות דעת מומחה',dh:'21 יום לפני מועד הדיון'},
+      {days:30,ref:'תקנה 117',he:'גילוי ועיון במסמכים',dh:'30 יום מהגשת כתבי הטענות'},
+      {days:14,ref:'תקנה 118',he:'תשובה לדרישת גילוי מסמכים',dh:'14 יום מקבלת הדרישה'},
+      {days:21,ref:'תקנה 121',he:'תשובות לשאלונים',dh:'21 יום מקבלת השאלון'},
+      {days:30,ref:'תקנה 155',he:'הודעת צד ג׳',dh:'30 יום מהמצאת כתב ההגנה'},
+      {days:30,ref:'תקנה 157',he:'כתב הגנה של צד ג׳',dh:'30 יום מהמצאת הודעת צד ג׳'},
+      {days:14,ref:'תקנה 176',he:'סיכומים בכתב — תובע',dh:'14 יום מסיום שמיעת הראיות'},
+      {days:14,ref:'תקנה 176',he:'סיכומים בכתב — נתבע',dh:'14 יום מהגשת סיכומי התובע'},
+      {days:7,ref:'תקנה 176',he:'סיכומי תשובה',dh:'7 ימים מהגשת סיכומי הנתבע'},
+      {days:7,ref:'תקנה 214ז',he:'בקשה לדחיית תובענה על הסף',dh:'7 ימים מהמצאת כתב התביעה'},
+      {days:30,ref:'תקנה 213',he:'בקשה לאיחוד תביעות',dh:'30 יום מפתיחת ההליך'},
+      {days:14,ref:'תקנה 202',he:'הגשת ראיות בהסכמה',dh:'14 יום לפני מועד הדיון'},
+      {days:21,ref:'תקנה 219',he:'הגשת תיק מוצגים',dh:'21 יום לפני מועד הדיון'},
+      {days:7,ref:'תקנה 296',he:'בקשה לעיון חוזר בהחלטה',dh:'7 ימים ממתן ההחלטה'},
+      {days:30,ref:'תקנה 306',he:'תביעה לסעד הצהרתי',dh:'30 יום מקרות העילה'}
+    ]
+  },
+  {
+    id:'appeals',icon:'⚖️',he:'ערעורים',en:'Appeals',
+    items:[
+      {days:45,ref:'תקנה 400',he:'ערעור על פסק דין — בית משפט שלום',dh:'45 יום מיום מתן פסק הדין'},
+      {days:45,ref:'תקנה 400',he:'ערעור על פסק דין — בית משפט מחוזי',dh:'45 יום מיום מתן פסק הדין'},
+      {days:30,ref:'סעיף 52 חוק ביהמ"ש',he:'בקשת רשות ערעור לעליון',dh:'30 יום ממתן פסק הדין'},
+      {days:30,ref:'תקנה 403',he:'ערעור על החלטת רשם',dh:'30 יום ממתן ההחלטה'},
+      {days:15,ref:'תקנה 406',he:'תשובה לערעור',dh:'15 יום ממועד הגשת הערעור'},
+      {days:10,ref:'תקנה 407',he:'תשובה לבקשת רשות ערעור',dh:'10 ימים ממועד הגשת הבקשה'},
+      {days:45,ref:'תקנה 408',he:'ערעור שכנגד',dh:'45 יום מהמצאת הודעת הערעור'},
+      {days:0,ref:'תקנה 371',he:'בקשת עיכוב ביצוע',dh:'יחד עם הגשת הערעור'},
+      {days:7,ref:'תקנה 412',he:'תשובה לבקשת עיכוב ביצוע',dh:'7 ימים מקבלת הבקשה'},
+      {days:30,ref:'תקנה 415',he:'ערעור על פסק בוררות',dh:'30 יום מקבלת פסק הבוררות'},
+      {days:20,ref:'תקנה 416',he:'השלמת טיעון בכתב — מערער',dh:'20 יום לפני מועד הדיון'},
+      {days:14,ref:'תקנה 416',he:'השלמת טיעון בכתב — משיב',dh:'14 יום לפני מועד הדיון'},
+      {days:45,ref:'תקנה 418',he:'ערעור על פסק דין בהיעדר',dh:'45 יום ממועד מתן פסק הדין'},
+      {days:30,ref:'תקנה 420',he:'ביטול פסק דין בהיעדר',dh:'30 יום מהמועד שנודע על פסק הדין'}
+    ]
+  },
+  {
+    id:'interim',icon:'⏱️',he:'בקשות ביניים וסעדים זמניים',en:'Interim Applications',
+    items:[
+      {days:0,ref:'תקנה 325',he:'בקשה לצו מניעה זמני',dh:'ניתן להגיש בכל עת'},
+      {days:3,ref:'תקנה 327',he:'תגובה לצו מניעה זמני',dh:'3 ימים ממועד הקבוע בצו'},
+      {days:7,ref:'תקנה 332',he:'בקשה לעיקול זמני',dh:'7 ימים מהיוודע על הנכס'},
+      {days:7,ref:'תקנה 334',he:'בקשה לעיקול בידי צד שלישי',dh:'7 ימים מהיוודע'},
+      {days:3,ref:'תקנה 335',he:'תגובה לבקשת עיקול',dh:'3 ימים ממועד שנקבע'},
+      {days:0,ref:'תקנה 338',he:'בקשת מינוי כונס נכסים זמני',dh:'ניתן להגיש בכל עת'},
+      {days:7,ref:'תקנה 339',he:'תגובה למינוי כונס נכסים',dh:'7 ימים מקבלת הבקשה'},
+      {days:14,ref:'תקנה 345',he:'בקשה לגילוי ראיות לפני תביעה',dh:'14 יום מהיוודע הצורך'},
+      {days:3,ref:'תקנה 367',he:'בקשה לצו אנטון פילר',dh:'3 ימים לפני הביצוע המוצע'},
+      {days:14,ref:'תקנה 352',he:'בקשה לפסיקתא',dh:'14 יום מיום מתן פסק הדין'},
+      {days:7,ref:'תקנה 353',he:'תיקון פסיקתא',dh:'7 ימים מקבלת הפסיקתא'},
+      {days:14,ref:'תקנה 358',he:'בקשה לביצוע מיידי',dh:'14 יום מפסק הדין'},
+      {days:30,ref:'תקנה 362',he:'בקשה לסעד הצהרתי זמני',dh:'30 יום מהיוודע העילה'}
+    ]
+  },
+  {
+    id:'enforcement',icon:'🏛️',he:'הוצאה לפועל',en:'Enforcement',
+    items:[
+      {days:30,ref:'חוק ההוצל"פ סעיף 6',he:'פתיחת תיק הוצאה לפועל',dh:'30 יום מסיום מועד הפירעון בפסק הדין'},
+      {days:30,ref:'חוק ההוצל"פ סעיף 19',he:'התנגדות לביצוע שטר',dh:'30 יום מהמצאת האזהרה'},
+      {days:30,ref:'חוק ההוצל"פ סעיף 28',he:'ערעור על החלטת רשם הוצל"פ',dh:'30 יום ממתן ההחלטה'},
+      {days:20,ref:'חוק ההוצל"פ סעיף 38',he:'בקשת עיכוב הליכי הוצל"פ',dh:'20 יום מקבלת האזהרה'},
+      {days:7,ref:'חוק ההוצל"פ סעיף 42',he:'תגובה לבקשת עיכוב הליכים',dh:'7 ימים מקבלת הבקשה'},
+      {days:14,ref:'חוק ההוצל"פ סעיף 53',he:'טען ביניים',dh:'14 יום מהמצאת ההתראה'},
+      {days:14,ref:'חוק ההוצל"פ סעיף 58',he:'ערעור על חלוקת כספים',dh:'14 יום ממועד החלוקה'},
+      {days:30,ref:'תקנות ההוצל"פ תקנה 25',he:'בקשה לצו עיכוב יציאה מהארץ',dh:'30 יום מהיוודע על החוב'},
+      {days:14,ref:'חוק ההוצל"פ סעיף 66ז',he:'בקשה לסגירת תיק הוצל"פ',dh:'14 יום מהסדר החוב'},
+      {days:30,ref:'חוק ההוצל"פ סעיף 80',he:'ביטול עיקול',dh:'30 יום מהיוודע על העיקול'},
+      {days:7,ref:'חוק ההוצל"פ סעיף 81',he:'תגובה לבקשת ביטול עיקול',dh:'7 ימים מקבלת הבקשה'}
+    ]
+  },
+  {
+    id:'labor',icon:'👷',he:'דיני עבודה',en:'Labor Law',
+    items:[
+      {days:30,ref:'חוק בית הדין לעבודה סעיף 33ב',he:'כתב הגנה — בית דין לעבודה',dh:'30 יום מהמצאת כתב התביעה'},
+      {days:30,ref:'חוק בית הדין לעבודה',he:'ערעור לבית הדין הארצי לעבודה',dh:'30 יום מיום מתן פסק הדין'},
+      {days:15,ref:'תקנות בית הדין לעבודה תקנה 36',he:'תשובה לערעור עבודה',dh:'15 יום ממועד הגשת הערעור'},
+      {days:7,ref:'חוק הגנת השכר סעיף 20',he:'תביעה לתשלום שכר מינימום',dh:'7 שנים מיום ההפרה (התיישנות)'},
+      {days:1825,ref:'חוק עבודת נשים סעיף 26',he:'תביעה בגין פיטורים שלא כדין — נשים',dh:'5 שנים מיום הפיטורים (התיישנות)'},
+      {days:30,ref:'חוק עסקאות גופים ציבוריים',he:'ערר על פיטורים בגוף ציבורי',dh:'30 יום ממועד הפיטורים'},
+      {days:60,ref:'חוק פיצויי פיטורים סעיף 29',he:'ערעור על שלילת פיצויי פיטורים',dh:'60 יום ממועד ההחלטה'},
+      {days:7,ref:'חוק שעות עבודה ומנוחה',he:'תלונה על הפרת חוק שעות עבודה',dh:'7 שנים מיום ההפרה (התיישנות)'},
+      {days:30,ref:'תקנות בית הדין לעבודה תקנה 45',he:'בקשה לצו מניעה זמני בעבודה',dh:'30 יום מהיוודע'},
+      {days:14,ref:'תקנות בית הדין לעבודה תקנה 46',he:'תגובה לצו מניעה זמני בעבודה',dh:'14 יום מקבלת הבקשה'},
+      {days:24,ref:'חוק יישוב סכסוכי עבודה',he:'הודעה על שביתה',dh:'15 יום מראש (שביתה כללית)'},
+      {days:30,ref:'חוק הסכמים קיבוציים סעיף 14',he:'ערעור על הסכם קיבוצי',dh:'30 יום מהפרסום ברשומות'},
+      {days:14,ref:'תקנות עובדים זרים',he:'ערר על דחיית היתר לעובד זר',dh:'14 יום ממועד הדחייה'},
+      {days:30,ref:'חוק עבודת נוער סעיף 27',he:'ערעור על החלטת מפקח עבודה',dh:'30 יום ממתן ההחלטה'}
+    ]
+  },
+  {
+    id:'family',icon:'👨‍👩‍👧',he:'משפחה ועיזבון',en:'Family & Estates',
+    items:[
+      {days:30,ref:'חוק הירושה סעיף 67',he:'התנגדות לצו ירושה',dh:'30 יום מפרסום הבקשה'},
+      {days:30,ref:'חוק הירושה סעיף 72',he:'התנגדות לצוואה — קיום צוואה',dh:'30 יום מפרסום הבקשה'},
+      {days:14,ref:'חוק הירושה סעיף 80',he:'ערעור על צו ירושה',dh:'14 יום ממתן הצו'},
+      {days:30,ref:'חוק יחסי ממון סעיף 11',he:'תביעת איזון משאבים',dh:'30 יום מסיום הנישואים'},
+      {days:30,ref:'חוק הכשרות המשפטית סעיף 33',he:'ערר על מינוי אפוטרופוס',dh:'30 יום ממתן ההחלטה'},
+      {days:15,ref:'חוק הכשרות המשפטית סעיף 38',he:'תגובה לבקשת אפוטרופסות',dh:'15 יום מקבלת הבקשה'},
+      {days:30,ref:'חוק אימוץ ילדים סעיף 25',he:'ערעור על פסק דין אימוץ',dh:'30 יום ממתן פסק הדין'},
+      {days:90,ref:'חוק המזונות (הבטחת תשלום)',he:'תביעת מזונות — אכיפה',dh:'90 יום מהפרת צו המזונות'},
+      {days:30,ref:'חוק הירושה סעיף 104',he:'תביעת נושה של עיזבון',dh:'30 יום מפרסום הודעת המנהל'},
+      {days:14,ref:'חוק הירושה סעיף 109',he:'חלוקת עיזבון — התנגדות',dh:'14 יום מהמצאת תוכנית החלוקה'},
+      {days:30,ref:'חוק משפחות חד הוריות',he:'ערעור על סיוע לחד הורי',dh:'30 יום ממועד ההחלטה'},
+      {days:30,ref:'חוק הגנה על הדייר',he:'תביעת פינוי מדירת מגורים',dh:'30 יום מהפרת הסכם השכירות'}
+    ]
+  },
+  {
+    id:'admin',icon:'🏛️',he:'מנהלי ועתירות',en:'Administrative',
+    items:[
+      {days:45,ref:'תקנות סדר הדין המנהלי תקנה 4',he:'עתירה מנהלית',dh:'45 יום ממועד ההחלטה המנהלית'},
+      {days:30,ref:'חוק בתי המשפט לעניינים מנהליים סעיף 5',he:'ערעור מנהלי',dh:'30 יום ממתן פסק הדין'},
+      {days:30,ref:'תקנות ביהמ"ש המנהלי תקנה 11',he:'תשובה לעתירה מנהלית',dh:'30 יום מהגשת העתירה'},
+      {days:30,ref:'חוק הרשויות המקומיות (בחירות)',he:'עתירה על בחירות מקומיות',dh:'30 יום מפרסום תוצאות הבחירות'},
+      {days:14,ref:'חוק ועדות חקירה סעיף 18',he:'ערעור על החלטת ועדת חקירה',dh:'14 יום ממתן ההחלטה'},
+      {days:30,ref:'חוק חופש המידע סעיף 17',he:'ערר על דחיית בקשת מידע',dh:'30 יום מקבלת ההחלטה'},
+      {days:45,ref:'חוק התכנון והבנייה סעיף 197',he:'תביעת פיצויים — נזק מתכנית',dh:'45 יום מהפקדת התכנית'},
+      {days:30,ref:'חוק התכנון והבנייה סעיף 152',he:'ערר על היתר בנייה',dh:'30 יום מיום מתן ההיתר'},
+      {days:30,ref:'חוק רישוי עסקים סעיף 7ג',he:'ערר על סגירת עסק',dh:'30 יום מהמצאת הצו'},
+      {days:30,ref:'פקודת העיריות סעיף 149',he:'ערעור על ארנונה',dh:'30 יום מהמצאת הדרישה'},
+      {days:30,ref:'חוק מס שבח מקרקעין',he:'ערר על שומת מס שבח',dh:'30 יום מקבלת השומה'},
+      {days:30,ref:'פקודת מס הכנסה סעיף 153',he:'ערעור על שומת מס הכנסה',dh:'30 יום מקבלת ההחלטה'},
+      {days:30,ref:'חוק מס ערך מוסף סעיף 83',he:'ערר על שומת מע"מ',dh:'30 יום מקבלת השומה'},
+      {days:60,ref:'חוק ביטוח לאומי סעיף 123',he:'ערעור על דחיית תביעת ביטוח לאומי',dh:'60 יום מקבלת ההחלטה'},
+      {days:30,ref:'חוק שירות המדינה (גמלאות)',he:'ערעור על גמלה',dh:'30 יום ממועד ההחלטה'}
+    ]
+  },
+  {
+    id:'criminal',icon:'🔒',he:'פלילי',en:'Criminal Law',
+    items:[
+      {days:30,ref:'חוק סדר הדין הפלילי סעיף 71',he:'ערעור על פסק דין פלילי — בית משפט שלום',dh:'30 יום ממתן פסק הדין'},
+      {days:45,ref:'חוק סדר הדין הפלילי סעיף 80',he:'ערעור על פסק דין פלילי — בית משפט מחוזי',dh:'45 יום ממתן פסק הדין'},
+      {days:30,ref:'חוק סדר הדין הפלילי סעיף 82',he:'בקשת רשות ערעור לעליון — פלילי',dh:'30 יום ממתן פסק הדין'},
+      {days:15,ref:'חוק סדר הדין הפלילי סעיף 143',he:'ערעור על גזר דין בלבד',dh:'15 יום ממתן גזר הדין'},
+      {days:30,ref:'חוק שחרור על תנאי סעיף 9',he:'ערר על דחיית שחרור על תנאי',dh:'30 יום ממועד ההחלטה'},
+      {days:14,ref:'חוק סדר הדין הפלילי סעיף 52ז',he:'ערר על מעצר',dh:'14 יום ממתן צו המעצר'},
+      {days:7,ref:'חוק סדר הדין הפלילי סעיף 52יד',he:'ערר על הארכת מעצר',dh:'7 ימים מהחלטת הארכה'},
+      {days:30,ref:'חוק עונשין סעיף 72',he:'בקשה לביטול הרשעה',dh:'30 יום ממועד ההרשעה'},
+      {days:30,ref:'חוק המרשם הפלילי ותקנת השבים',he:'בקשת מחיקת הרשעה ממרשם',dh:'30 יום מהגשת הבקשה'},
+      {days:10,ref:'חוק זכויות נפגעי עבירה סעיף 17',he:'הגשת עמדת נפגע עבירה',dh:'10 ימים לפני הדיון לגזר דין'},
+      {days:30,ref:'חוק הנוער (שפיטה ענישה) סעיף 26',he:'ערעור על פסק דין קטין',dh:'30 יום ממתן פסק הדין'},
+      {days:30,ref:'חוק מניעת הלבנת הון',he:'ערר על הפקעת נכסים',dh:'30 יום ממועד ההחלטה'}
+    ]
+  },
+  {
+    id:'insolvency',icon:'💸',he:'חדלות פירעון ופשיטת רגל',en:'Insolvency',
+    items:[
+      {days:30,ref:'חוק חדלות פירעון סעיף 72',he:'הגשת תביעת חוב',dh:'30 יום ממועד פרסום צו הכינוס'},
+      {days:21,ref:'חוק חדלות פירעון סעיף 79',he:'השגה על דחיית תביעת חוב',dh:'21 יום מקבלת הודעת הדחייה'},
+      {days:14,ref:'חוק חדלות פירעון סעיף 90',he:'ערעור על החלטת נאמן',dh:'14 יום ממתן ההחלטה'},
+      {days:30,ref:'חוק חדלות פירעון סעיף 175',he:'בקשת ביטול עסקה חשודה',dh:'30 יום מגילוי העסקה החשודה'},
+      {days:30,ref:'חוק חדלות פירעון סעיף 195',he:'ערר על תוכנית הבראה',dh:'30 יום מפרסום התוכנית'},
+      {days:7,ref:'חוק חדלות פירעון סעיף 220',he:'התנגדות לדוח הנאמן',dh:'7 ימים מהגשת הדוח'},
+      {days:30,ref:'חוק חדלות פירעון סעיף 241',he:'בקשה לצו הפטר',dh:'30 יום לאחר ניהול הנכסים'},
+      {days:21,ref:'חוק חדלות פירעון סעיף 247',he:'התנגדות לצו הפטר',dh:'21 יום מפרסום הבקשה להפטר'},
+      {days:14,ref:'תקנות חדלות פירעון',he:'ערעור על החלטת בית משפט בחדל"פ',dh:'14 יום ממתן ההחלטה'},
+      {days:30,ref:'חוק חדלות פירעון — חברות',he:'בקשת פירוק חברה',dh:'30 יום מהפרת חובת התשלום'}
+    ]
+  },
+  {
+    id:'smallclaims',icon:'🏪',he:'תביעות קטנות ובוררות',en:'Small Claims & Arbitration',
+    items:[
+      {days:14,ref:'תקנות תביעות קטנות תקנה 4',he:'הגשת תגובה — תביעות קטנות',dh:'14 יום מהמצאת כתב התביעה'},
+      {days:30,ref:'תקנות תביעות קטנות תקנה 14',he:'ערעור על פסק דין תביעות קטנות',dh:'30 יום ממתן פסק הדין'},
+      {days:7,ref:'תקנות תביעות קטנות תקנה 11',he:'בקשה לדחיית מועד דיון',dh:'7 ימים לפני מועד הדיון'},
+      {days:30,ref:'חוק הבוררות סעיף 24',he:'בקשה לביטול פסק בוררות',dh:'30 יום מקבלת פסק הבוררות'},
+      {days:30,ref:'חוק הבוררות סעיף 28',he:'ערעור על פסק בוררות',dh:'30 יום מביטול הפסק'},
+      {days:14,ref:'חוק הבוררות סעיף 22',he:'בקשה לתיקון פסק בוררות',dh:'14 יום מקבלת הפסק'},
+      {days:30,ref:'חוק הבוררות סעיף 15',he:'בקשה לאכיפת פסק בוררות',dh:'30 יום מקבלת הפסק'},
+      {days:7,ref:'תקנות הבוררות',he:'בקשת פסלות בורר',dh:'7 ימים מהיוודע עילת הפסלות'}
+    ]
+  },
+  {
+    id:'realestate',icon:'🏠',he:'מקרקעין',en:'Real Estate',
+    items:[
+      {days:30,ref:'חוק המקרקעין סעיף 161',he:'תביעת פינוי מושכר',dh:'30 יום מהפרת חוזה השכירות'},
+      {days:30,ref:'חוק שכירות ושאילה',he:'ביטול חוזה שכירות',dh:'30 יום ממתן התראה'},
+      {days:30,ref:'חוק המכר (דירות) סעיף 6',he:'תביעת ליקויי בנייה',dh:'30 יום מגילוי הליקוי'},
+      {days:365,ref:'חוק המכר (דירות) הגנת רוכשים',he:'תביעה נגד קבלן — אי מסירה',dh:'שנה מהמועד החוזי למסירה'},
+      {days:30,ref:'חוק התכנון והבנייה סעיף 207',he:'ערעור על צו הריסה',dh:'30 יום מהמצאת הצו'},
+      {days:30,ref:'חוק התכנון והבנייה סעיף 222',he:'בקשת עיכוב צו הריסה',dh:'30 יום מהמצאת הצו'},
+      {days:30,ref:'חוק המקרקעין סעיף 71ב',he:'ערר ועדת ערר — ועד בית',dh:'30 יום מקבלת ההחלטה'},
+      {days:14,ref:'חוק הגנת הדייר',he:'ערעור על פינוי דייר מוגן',dh:'14 יום ממתן הפסק'},
+      {days:30,ref:'חוק בתים משותפים',he:'תביעה נגד ועד הבית',dh:'30 יום מהיוודע על הנזק'}
+    ]
+  },
+  {
+    id:'commercial',icon:'💼',he:'מסחרי וחוזים',en:'Commercial & Contracts',
+    items:[
+      {days:7,ref:'חוק החוזים סעיף 20',he:'ביטול חוזה בשל פגם בכריתה',dh:'7 שנים מיום גילוי הפגם (התיישנות)'},
+      {days:30,ref:'חוק החוזים (תרופות) סעיף 8',he:'הודעת ביטול חוזה',dh:'30 יום מהפרה יסודית'},
+      {days:7,ref:'חוק המכר סעיף 14',he:'הודעת אי-התאמה במכר',dh:'7 ימים מיום גילוי אי-ההתאמה'},
+      {days:30,ref:'חוק שומרים',he:'תביעת נזק לנכס שנמסר לשמירה',dh:'30 יום מהיוודע הנזק'},
+      {days:30,ref:'פקודת השטרות',he:'הגשת תביעה על שטר',dh:'6 שנים מיום פירעון השטר (התיישנות)'},
+      {days:30,ref:'חוק הערבות סעיף 6',he:'תביעת ערב',dh:'30 יום מדרישת הנושה'},
+      {days:14,ref:'חוק הפיקוח על עסקי ביטוח',he:'ערר על דחיית תביעת ביטוח',dh:'14 יום מקבלת ההחלטה'},
+      {days:30,ref:'חוק הגנת הצרכן סעיף 31',he:'תביעה צרכנית',dh:'30 יום מהיוודע הנזק'},
+      {days:45,ref:'חוק ניירות ערך סעיף 52יב',he:'תביעה ייצוגית — ניירות ערך',dh:'45 יום מהגשת הבקשה לאישור'},
+      {days:90,ref:'חוק תובענות ייצוגיות סעיף 14',he:'תביעה ייצוגית — הגשת בקשה',dh:'90 יום מגילוי העילה'},
+      {days:30,ref:'חוק תובענות ייצוגיות סעיף 18',he:'תגובה לבקשה לאישור תביעה ייצוגית',dh:'30 יום מהמצאת הבקשה'}
+    ]
+  },
+  {
+    id:'notary',icon:'📜',he:'נוטריון',en:'Notary',
+    items:[
+      {days:30,ref:'חוק הנוטריונים סעיף 18',he:'ערר על סירוב נוטריון',dh:'30 יום מהסירוב'},
+      {days:30,ref:'חוק הנוטריונים סעיף 24',he:'ערעור על החלטת ועדת הביקורת',dh:'30 יום ממתן ההחלטה'},
+      {days:14,ref:'תקנות הנוטריונים',he:'בקשה לתיקון מסמך נוטריוני',dh:'14 יום מגילוי הטעות'},
+      {days:30,ref:'חוק האפוסטיל',he:'אימות מסמך לחו"ל — תוקף',dh:'תלוי במדינת היעד'},
+      {days:7,ref:'תקנות הנוטריונים תקנה 12',he:'הגשת פרוטוקול נוטריוני',dh:'7 ימים מהמועד שנקבע'},
+      {days:30,ref:'חוק הנוטריונים סעיף 14',he:'תלונה על נוטריון',dh:'30 יום מהיוודע המעשה'},
+      {days:90,ref:'חוק הנוטריונים סעיף 20',he:'שמירת מסמכי נוטריון',dh:'90 שנה מיום העריכה (שמירה)'}
+    ]
+  },
+  {
+    id:'ip',icon:'💡',he:'קניין רוחני',en:'Intellectual Property',
+    items:[
+      {days:90,ref:'חוק הפטנטים סעיף 25',he:'התנגדות לפטנט',dh:'90 יום מפרסום בקשת הפטנט'},
+      {days:30,ref:'חוק הפטנטים סעיף 73',he:'ערעור על החלטת רשם הפטנטים',dh:'30 יום ממתן ההחלטה'},
+      {days:30,ref:'חוק סימני מסחר סעיף 24',he:'התנגדות לסימן מסחר',dh:'30 יום מפרסום הסימן'},
+      {days:30,ref:'חוק זכות יוצרים סעיף 52',he:'תביעת הפרת זכות יוצרים',dh:'30 יום מגילוי ההפרה'},
+      {days:30,ref:'חוק עיצובים',he:'התנגדות לרישום עיצוב',dh:'30 יום מפרסום הבקשה'},
+      {days:30,ref:'חוק הפטנטים סעיף 165',he:'תביעת הפרת פטנט',dh:'30 יום מגילוי ההפרה'}
+    ]
+  },
+  {
+    id:'immigration',icon:'✈️',he:'הגירה ואזרחות',en:'Immigration',
+    items:[
+      {days:30,ref:'חוק הכניסה לישראל סעיף 13',he:'ערר על דחיית בקשת ויזה',dh:'30 יום מקבלת ההחלטה'},
+      {days:30,ref:'חוק האזרחות סעיף 11',he:'ערר על דחיית בקשת אזרחות',dh:'30 יום מקבלת ההחלטה'},
+      {days:14,ref:'חוק הכניסה לישראל סעיף 30ג',he:'ערר על צו גירוש',dh:'14 יום ממסירת הצו'},
+      {days:30,ref:'חוק מעמד עולים',he:'ערר על שלילת מעמד עולה',dh:'30 יום מקבלת ההחלטה'}
+    ]
+  },
+  {
+    id:'banking',icon:'🏦',he:'בנקאות ופיננסים',en:'Banking & Finance',
+    items:[
+      {days:30,ref:'חוק הבנקאות (שירות ללקוח) סעיף 9',he:'ערר על החלטת בנק',dh:'30 יום מקבלת ההחלטה'},
+      {days:45,ref:'חוק הסדרת העיסוק בייעוץ השקעות',he:'ערר על דחיית רישיון',dh:'45 יום מקבלת ההחלטה'},
+      {days:30,ref:'חוק כרטיסי חיוב',he:'תלונה על חיוב שגוי',dh:'30 יום מגילוי החיוב'},
+      {days:14,ref:'חוק שירות נתוני אשראי',he:'תיקון נתוני אשראי שגויים',dh:'14 יום מהגשת הבקשה'}
+    ]
+  }
 ];
+
+var LAWS=LAWS_CATS.reduce(function(acc,cat){
+  cat.items.forEach(function(item){ acc.push(Object.assign({},item,{cat:cat.id})); });
+  return acc;
+},[]);
 
 var CALC_TYPES=[
   {k:'civil',he:'תביעה אזרחית',en:'Civil Claim',rates:[{from:0,to:50000,pct:10},{from:50000,to:200000,pct:7},{from:200000,to:1000000,pct:5},{from:1000000,to:999999999,pct:3}]},
@@ -1114,7 +1369,7 @@ function renderDash(){
     {icon:'📅',bg:'var(--ps)',col:'var(--pur)',he:'יומן',en:'Calendar',pg:'pg-cal',sub:function(){ var m=new Date(); return T(['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'][m.getMonth()],''); },badge:0},
     {icon:'📋',bg:'var(--as)',col:'var(--amb)',he:'לוג פעולות',en:'Activity Log',pg:'pg-log',sub:function(){ return d.logs.length+T(' פעולות',' actions'); },badge:0},
     {icon:'⌛',bg:'var(--gs)',col:'var(--grn)',he:'שעות ושכר',en:'Hours & Fees',pg:'pg-hours',sub:function(){ return fmtMoney(unpaid)+T(' מתועד',' logged'); },badge:unpaid>0?1:0},
-    {icon:'⚖️',bg:'var(--acc-s)',col:'var(--acc)',he:'חוקי סד"פ',en:'Proc. Rules',pg:'pg-laws',sub:function(){ return T('10 תקנות','10 rules'); },badge:0},
+    {icon:'⚖️',bg:'var(--acc-s)',col:'var(--acc)',he:'חוקי סד"פ',en:'Proc. Rules',pg:'pg-laws',sub:function(){ var total=LAWS_CATS.reduce(function(s,c){ return s+c.items.length; },0); return total+T(' מועדים',' deadlines'); },badge:0},
     {icon:'🔔',bg:'var(--rs)',col:'var(--red)',he:'התראות',en:'Alerts',pg:'pg-alerts',sub:function(){ return alertCount+T(' פעילות',' active'); },badge:alertCount},
     {icon:'📊',bg:'var(--ps)',col:'var(--pur)',he:'דוחות',en:'Reports',pg:'pg-rep',sub:function(){ return 'PDF · CSV'; },badge:0},
     {icon:'🧮',bg:'var(--as)',col:'var(--amb)',he:'מחשבון שכר',en:'Fee Calc',pg:'pg-calc',sub:function(){ return T('תעריפי לשכה','Bar rates'); },badge:0},
@@ -1509,8 +1764,10 @@ function openCaseDetail(caseId){
   body.appendChild(addEvBtn); body.appendChild(addLogBtn); body.appendChild(shareBtn); bx.appendChild(body);
   var ft=document.createElement('div'); ft.className='mo-foot';
   var editBtn=document.createElement('button'); editBtn.className='btn'; editBtn.textContent=T('✏️ עריכה','✏️ Edit'); editBtn.onclick=function(){ document.body.removeChild(ov); openEditCase(caseId); };
+  var aiBtn=document.createElement('button'); aiBtn.className='btn'; aiBtn.style.cssText='background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-color:transparent;font-weight:700;';
+  aiBtn.textContent=T('🤖 שאל AI','🤖 Ask AI'); aiBtn.onclick=function(){ document.body.removeChild(ov); openAIForCase(caseId); };
   var cl2=document.createElement('button'); cl2.className='btn'; cl2.textContent=T('סגור','Close'); cl2.onclick=function(){ document.body.removeChild(ov); };
-  ft.appendChild(editBtn); ft.appendChild(cl2); bx.appendChild(ft);
+  ft.appendChild(editBtn); ft.appendChild(aiBtn); ft.appendChild(cl2); bx.appendChild(ft);
   ov.appendChild(bx); ov.onclick=function(e){ if(e.target===ov) document.body.removeChild(ov); };
   document.body.appendChild(ov);
 }
@@ -1960,24 +2217,107 @@ function renderHoursList(){
    LAWS
 ══════════════════════════════════════ */
 function renderLaws(){
-  var el=document.getElementById('laws-card'); el.innerHTML='';
-  el.appendChild(mkCardHd(T('תקנות סדר הדין האזרחי התשע"ט-2018','Civil Procedure Rules 2018'),null));
-  LAWS.forEach(function(law){
+  var pg=document.getElementById('pg-laws'); pg.innerHTML='';
+  var total=LAWS_CATS.reduce(function(s,c){ return s+c.items.length; },0);
+  var searchWrap=document.createElement('div'); searchWrap.style.cssText='position:relative;margin-bottom:14px;';
+  var searchIcon=document.createElement('span'); searchIcon.style.cssText='position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--txt3);pointer-events:none;';
+  searchIcon.textContent='🔍';
+  var searchInp=document.createElement('input'); searchInp.type='text';
+  searchInp.placeholder=T('חיפוש בין '+total+' מועדים משפטיים...','Search '+total+' legal deadlines...');
+  searchInp.style.cssText='padding-right:36px;';
+  searchWrap.appendChild(searchIcon); searchWrap.appendChild(searchInp); pg.appendChild(searchWrap);
+  var resultsEl=document.createElement('div'); resultsEl.id='laws-results'; pg.appendChild(resultsEl);
+  var catsEl=document.createElement('div'); catsEl.id='laws-cats'; pg.appendChild(catsEl);
+  renderLawsCats('',catsEl); renderLawsResults('',resultsEl);
+  searchInp.oninput=function(){
+    var q=searchInp.value.trim();
+    if(q.length>=2){ catsEl.style.display='none'; resultsEl.style.display='block'; renderLawsResults(q,resultsEl); }
+    else { catsEl.style.display='block'; resultsEl.style.display='none'; }
+  };
+}
+
+function renderLawsCats(q,el){
+  el.innerHTML='';
+  LAWS_CATS.forEach(function(cat){
+    var card=document.createElement('div'); card.className='card'; card.style.marginBottom='10px';
+    var hd=document.createElement('div'); hd.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:13px 16px;cursor:pointer;';
+    hd.onmouseenter=function(){ hd.style.background='var(--bg3)'; }; hd.onmouseleave=function(){ hd.style.background=''; };
+    var left=document.createElement('div'); left.style.cssText='display:flex;align-items:center;gap:10px;';
+    var icon=document.createElement('span'); icon.style.fontSize='18px'; icon.textContent=cat.icon;
+    var name=document.createElement('span'); name.style.cssText='font-size:14px;font-weight:700;color:var(--txt);'; name.textContent=cat.he;
+    var count=document.createElement('span'); count.className='badge b-blue'; count.textContent=cat.items.length+T(' מועדים',' deadlines');
+    left.appendChild(icon); left.appendChild(name); left.appendChild(count);
+    var arrow=document.createElement('span'); arrow.style.cssText='color:var(--txt3);font-size:16px;transition:transform 0.2s;'; arrow.textContent='›';
+    hd.appendChild(left); hd.appendChild(arrow);
+    var body=document.createElement('div'); body.style.display='none';
+    var isOpen=false;
+    hd.onclick=function(){
+      isOpen=!isOpen; body.style.display=isOpen?'block':'none';
+      arrow.style.transform=isOpen?'rotate(90deg)':'';
+      if(isOpen&&body.innerHTML==='') renderLawsItems(cat.items,body);
+    };
+    card.appendChild(hd); card.appendChild(body); el.appendChild(card);
+  });
+}
+
+function renderLawsItems(items,el){
+  el.innerHTML='';
+  items.forEach(function(law,idx){
     var row=document.createElement('div');
-    row.style.cssText='display:flex;align-items:flex-start;gap:16px;padding:12px 16px;border-bottom:1px solid var(--brd);';
-    var left=document.createElement('div');
-    left.style.cssText='border-right:3px solid var(--acc);padding-right:12px;flex:1;';
+    row.style.cssText='display:flex;align-items:flex-start;gap:14px;padding:11px 16px;border-top:1px solid var(--brd);';
+    var left=document.createElement('div'); left.style.cssText='border-right:3px solid var(--acc);padding-right:12px;flex:1;';
     if(lang==='en') left.style.cssText='border-right:none;border-left:3px solid var(--acc);padding-right:0;padding-left:12px;flex:1;';
-    var nm=document.createElement('div'); nm.style.cssText='font-size:13px;font-weight:700;color:var(--txt);'; nm.textContent=T(law.he,law.en);
+    var nm=document.createElement('div'); nm.style.cssText='font-size:13px;font-weight:600;color:var(--txt);'; nm.textContent=law.he;
     var ref=document.createElement('div'); ref.style.cssText='font-size:11px;color:var(--acc);font-weight:600;margin-top:3px;'; ref.textContent=law.ref;
-    var desc=document.createElement('div'); desc.style.cssText='font-size:12px;color:var(--txt2);margin-top:4px;line-height:1.6;'; desc.textContent=T(law.dh,law.de);
+    var desc=document.createElement('div'); desc.style.cssText='font-size:12px;color:var(--txt2);margin-top:3px;line-height:1.5;'; desc.textContent=law.dh;
     left.appendChild(nm); left.appendChild(ref); left.appendChild(desc);
-    var right=document.createElement('div'); right.style.textAlign='center';
-    var daysNum=document.createElement('div'); daysNum.style.cssText='font-size:22px;font-weight:800;color:var(--acc);'; daysNum.textContent=law.days>0?String(law.days):'—';
-    var daysLbl=document.createElement('div'); daysLbl.style.cssText='font-size:10px;color:var(--txt3);font-weight:600;'; daysLbl.textContent=law.days>0?T('יום','days'):'';
-    right.appendChild(daysNum); right.appendChild(daysLbl);
+    var right=document.createElement('div'); right.style.cssText='text-align:center;flex-shrink:0;min-width:44px;display:flex;flex-direction:column;align-items:center;gap:6px;';
+    var dnum=document.createElement('div'); dnum.style.cssText='font-size:20px;font-weight:800;color:var(--acc);line-height:1;'; dnum.textContent=law.days>0?law.days:'—';
+    var dlbl=document.createElement('div'); dlbl.style.cssText='font-size:9px;color:var(--txt3);margin-top:2px;'; dlbl.textContent=law.days>0?T('יום','d'):'';
+    var aibtn=document.createElement('button'); aibtn.className='btn btn-sm'; aibtn.style.cssText='font-size:10px;padding:3px 7px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-color:transparent;min-height:22px;';
+    aibtn.textContent='🤖';aibtn.title=T('שאל AI על דין זה','Ask AI about this rule');
+    var lRef=law; aibtn.onclick=function(){ openAIForLaw(lRef.he,lRef.ref,lRef.days); };
+    right.appendChild(dnum); right.appendChild(dlbl); right.appendChild(aibtn);
     row.appendChild(left); row.appendChild(right); el.appendChild(row);
   });
+}
+
+function renderLawsResults(q,el){
+  el.innerHTML='';
+  if(!q){ el.style.display='none'; return; }
+  var ql=q.toLowerCase();
+  var hits=[];
+  LAWS_CATS.forEach(function(cat){
+    cat.items.forEach(function(item){
+      if(item.he.indexOf(q)>-1||item.ref.toLowerCase().indexOf(ql)>-1||item.dh.indexOf(q)>-1){
+        hits.push({item:item,catName:cat.he,catIcon:cat.icon});
+      }
+    });
+  });
+  if(hits.length===0){
+    el.appendChild(mkEmpty('🔍',T('לא נמצאו תוצאות','No results'),T('נסה מילות חיפוש אחרות','Try different keywords')));
+    return;
+  }
+  var hdr=document.createElement('div'); hdr.style.cssText='font-size:12px;color:var(--txt3);margin-bottom:8px;'; hdr.textContent=T(hits.length+' תוצאות',hits.length+' results'); el.appendChild(hdr);
+  var card=document.createElement('div'); card.className='card';
+  hits.forEach(function(hit){
+    var row=document.createElement('div'); row.style.cssText='display:flex;align-items:flex-start;gap:14px;padding:11px 16px;border-bottom:1px solid var(--brd);';
+    var left=document.createElement('div'); left.style.cssText='border-right:3px solid var(--acc);padding-right:12px;flex:1;';
+    if(lang==='en') left.style.cssText='border-right:none;border-left:3px solid var(--acc);padding-right:0;padding-left:12px;flex:1;';
+    var nm=document.createElement('div'); nm.style.cssText='font-size:13px;font-weight:600;color:var(--txt);'; nm.textContent=hit.item.he;
+    var meta=document.createElement('div'); meta.style.cssText='display:flex;gap:8px;align-items:center;margin-top:3px;flex-wrap:wrap;';
+    var catBadge=document.createElement('span'); catBadge.style.cssText='font-size:10px;color:var(--txt3);'; catBadge.textContent=hit.catIcon+' '+hit.catName;
+    var refBadge=document.createElement('span'); refBadge.className='badge b-blue'; refBadge.style.fontSize='10px'; refBadge.textContent=hit.item.ref;
+    meta.appendChild(catBadge); meta.appendChild(refBadge);
+    var desc=document.createElement('div'); desc.style.cssText='font-size:12px;color:var(--txt2);margin-top:3px;'; desc.textContent=hit.item.dh;
+    left.appendChild(nm); left.appendChild(meta); left.appendChild(desc);
+    var right=document.createElement('div'); right.style.cssText='text-align:center;flex-shrink:0;min-width:44px;';
+    var dnum=document.createElement('div'); dnum.style.cssText='font-size:20px;font-weight:800;color:var(--acc);line-height:1;'; dnum.textContent=hit.item.days>0?hit.item.days:'—';
+    var dlbl=document.createElement('div'); dlbl.style.cssText='font-size:9px;color:var(--txt3);margin-top:2px;'; dlbl.textContent=hit.item.days>0?T('יום','d'):'';
+    right.appendChild(dnum); right.appendChild(dlbl);
+    row.appendChild(left); row.appendChild(right); card.appendChild(row);
+  });
+  el.appendChild(card);
 }
 
 /* ══════════════════════════════════════
@@ -2407,8 +2747,156 @@ function renderDesign(){
 }
 
 /* ══════════════════════════════════════
-   GOOGLE CALENDAR
+   AI ASSISTANT
 ══════════════════════════════════════ */
+var AI_APPS=[
+  {name:'Claude',icon:'🟠',pkg:'anthropic.claude',store:'https://play.google.com/store/apps/details?id=com.anthropic.claude',ios:'https://apps.apple.com/app/claude-by-anthropic/id6473753684'},
+  {name:'ChatGPT',icon:'🟢',pkg:'com.openai.chatgpt',store:'https://play.google.com/store/apps/details?id=com.openai.chatgpt',ios:'https://apps.apple.com/app/chatgpt/id6448311069'},
+  {name:'Gemini',icon:'🔵',pkg:'com.google.android.apps.bard',store:'https://play.google.com/store/apps/details?id=com.google.android.apps.bard',ios:'https://apps.apple.com/app/google-gemini/id6477489729'},
+  {name:'Copilot',icon:'🟣',pkg:'com.microsoft.copilot',store:'https://play.google.com/store/apps/details?id=com.microsoft.copilot',ios:'https://apps.apple.com/app/microsoft-copilot/id6472538445'},
+  {name:'Perplexity',icon:'⚫',pkg:'ai.perplexity.app.android',store:'https://play.google.com/store/apps/details?id=ai.perplexity.app.android',ios:'https://apps.apple.com/app/perplexity-ask-anything/id1668000334'}
+];
+
+function buildAIQuestion(context){
+  var prefix=T(
+    'אני עורך דין ישראלי משתמש במערכת LexCalendar. אנא ענה בעברית. ',
+    'I am an Israeli lawyer using LexCalendar. Please answer in Hebrew. '
+  );
+  return prefix+(context||'');
+}
+
+function sendToAI(question){
+  var isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+  var isAndroid=/Android/.test(navigator.userAgent);
+  var fullQ=buildAIQuestion(question);
+  if(navigator.share&&(isIOS||isAndroid)){
+    navigator.share({text:fullQ}).catch(function(){
+      copyAndToast(fullQ);
+    });
+  } else {
+    copyAndToast(fullQ);
+  }
+}
+
+function copyAndToast(text){
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(function(){
+      toast(T('השאלה הועתקה — הדבק ב-AI שלך','Question copied — paste in your AI'),3500);
+    });
+  } else {
+    var ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    toast(T('הועתק — הדבק ב-AI שלך','Copied — paste in your AI'),3500);
+  }
+}
+
+function openAI(presetQuestion){
+  var ov=mkOv(); var bx=mkBx();
+  bx.style.maxWidth='560px';
+  bx.appendChild(mkMoHd(T('🤖 שאל AI','🤖 Ask AI'),ov));
+  var body=document.createElement('div'); body.className='mo-body';
+
+  var hero=document.createElement('div');
+  hero.style.cssText='background:linear-gradient(135deg,#667eea22,#764ba222);border:1px solid #764ba244;border-radius:var(--rl);padding:14px 16px;margin-bottom:16px;';
+  var heroT=document.createElement('div'); heroT.style.cssText='font-size:13px;font-weight:700;color:var(--txt);margin-bottom:4px;'; heroT.textContent=T('AI משפטי — מחובר ל-AI שלך','Legal AI — Connected to your AI');
+  var heroS=document.createElement('div'); heroS.style.cssText='font-size:12px;color:var(--txt2);line-height:1.6;'; heroS.textContent=T('הכפתור ישלח את השאלה ישירות ל-AI שמותקן על המכשיר שלך (Claude, ChatGPT, Gemini וכו\'). אין צורך בחשבון נוסף.','Sends the question directly to the AI installed on your device. No additional account needed.');
+  hero.appendChild(heroT); hero.appendChild(heroS); body.appendChild(hero);
+
+  var presetsLbl=document.createElement('div'); presetsLbl.className='fl'; presetsLbl.textContent=T('שאלות מוכנות','Quick Questions'); body.appendChild(presetsLbl);
+  var d=getData();
+  var urgEvs=d.events.filter(function(ev){ return ev.date&&daysTo(ev.date)>=0&&daysTo(ev.date)<=14; });
+  urgEvs.sort(function(a,b){ return a.date.localeCompare(b.date); });
+  var PRESETS=[
+    {icon:'⏰',he:'מה המועד להגשת ערעור על פסק דין?',en:'What is the deadline to appeal a judgment?'},
+    {icon:'📋',he:'האם ניתן להאריך מועד הגשת כתב הגנה?',en:'Can a defense filing deadline be extended?'},
+    {icon:'⚖️',he:'מה ההבדל בין ערעור לבקשת רשות ערעור?',en:'What is the difference between an appeal and leave to appeal?'},
+    {icon:'💰',he:'כיצד מחשבים שכר טרחה בתביעה אזרחית?',en:'How to calculate attorney fees in a civil claim?'},
+    {icon:'🏛️',he:'מתי מגישים עתירה מנהלית?',en:'When to file an administrative petition?'},
+    {icon:'👷',he:'מה מועדי ההתיישנות בדיני עבודה?',en:'What are labor law statutes of limitations?'}
+  ];
+  if(urgEvs.length>0){
+    var c=d.cases.find(function(x){ return x.id===urgEvs[0].caseId; });
+    PRESETS.unshift({icon:'🔔',he:'יש לי מועד '+urgEvs[0].title+(c?' בתיק '+c.name:'')+' בתאריך '+fmtDate(urgEvs[0].date)+'. מה עלי לעשות ולהכין?',en:'I have deadline '+urgEvs[0].title+' on '+fmtDate(urgEvs[0].date)+'. What should I prepare?'});
+  }
+  var presetsGrid=document.createElement('div'); presetsGrid.style.cssText='display:flex;flex-direction:column;gap:6px;margin-bottom:14px;';
+  PRESETS.slice(0,6).forEach(function(p){
+    var btn=document.createElement('button'); btn.className='btn'; btn.style.cssText='text-align:right;justify-content:flex-start;gap:8px;font-size:12px;padding:8px 12px;';
+    if(lang==='en') btn.style.textAlign='left';
+    var ic=document.createElement('span'); ic.textContent=p.icon;
+    var lbl=document.createElement('span'); lbl.textContent=T(p.he,p.en);
+    btn.appendChild(ic); btn.appendChild(lbl);
+    btn.onclick=function(){ qInp.value=T(p.he,p.en); qInp.focus(); };
+    presetsGrid.appendChild(btn);
+  });
+  body.appendChild(presetsGrid);
+
+  var qLbl=document.createElement('div'); qLbl.className='fl'; qLbl.textContent=T('או כתוב שאלה חופשית','Or write your own question'); body.appendChild(qLbl);
+  var qInp=document.createElement('textarea'); qInp.rows=3;
+  qInp.placeholder=T('לדוגמה: קיבלתי כתב תביעה ב-1.6.2025, מהו המועד האחרון להגשת כתב הגנה בסדר דין רגיל?','E.g.: I received a claim on 1.6.2025, what is the last date to file a defense in regular track?');
+  if(presetQuestion) qInp.value=presetQuestion;
+  body.appendChild(qInp);
+
+  var sendLbl=document.createElement('div'); sendLbl.className='fl'; sendLbl.style.marginTop='12px'; sendLbl.textContent=T('שלח ל-AI שלך','Send to your AI'); body.appendChild(sendLbl);
+  var appsBtns=document.createElement('div'); appsBtns.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;';
+  AI_APPS.forEach(function(app){
+    var btn=document.createElement('button'); btn.className='btn btn-sm'; btn.style.cssText='flex:1;min-width:80px;flex-direction:column;height:52px;gap:2px;';
+    var ic=document.createElement('div'); ic.style.fontSize='16px'; ic.textContent=app.icon;
+    var nm=document.createElement('div'); nm.style.cssText='font-size:10px;font-weight:600;'; nm.textContent=app.name;
+    btn.appendChild(ic); btn.appendChild(nm);
+    btn.onclick=function(){
+      var q=qInp.value.trim();
+      if(!q){ toast(T('כתוב שאלה קודם','Write a question first')); return; }
+      document.body.removeChild(ov);
+      sendToAI(q);
+    };
+    appsBtns.appendChild(btn);
+  });
+  body.appendChild(appsBtns);
+
+  var copyBtn=document.createElement('button'); copyBtn.className='btn btn-full';
+  copyBtn.textContent=T('📋 העתק שאלה ללוח','📋 Copy question to clipboard');
+  copyBtn.onclick=function(){
+    var q=qInp.value.trim();
+    if(!q){ toast(T('כתוב שאלה קודם','Write a question first')); return; }
+    copyAndToast(buildAIQuestion(q));
+  };
+  body.appendChild(copyBtn);
+
+  var noAiDiv=document.createElement('div'); noAiDiv.style.cssText='margin-top:14px;padding:12px 14px;background:var(--bg3);border-radius:var(--r);';
+  var noAiT=document.createElement('div'); noAiT.style.cssText='font-size:12px;font-weight:600;color:var(--txt2);margin-bottom:8px;'; noAiT.textContent=T('אין AI במכשיר? התקן אחד בחינם:','No AI on device? Install one for free:');
+  var installBtns=document.createElement('div'); installBtns.style.cssText='display:flex;gap:6px;flex-wrap:wrap;';
+  var isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+  AI_APPS.slice(0,3).forEach(function(app){
+    var a=document.createElement('a'); a.href=isIOS?app.ios:app.store; a.target='_blank';
+    a.className='btn btn-sm'; a.style.textDecoration='none'; a.style.display='inline-flex';
+    a.textContent=app.icon+' '+app.name;
+    installBtns.appendChild(a);
+  });
+  noAiDiv.appendChild(noAiT); noAiDiv.appendChild(installBtns); body.appendChild(noAiDiv);
+  bx.appendChild(body);
+  var ft=document.createElement('div'); ft.className='mo-foot';
+  var cl=document.createElement('button'); cl.className='btn'; cl.textContent=T('סגור','Close'); cl.onclick=function(){ document.body.removeChild(ov); };
+  ft.appendChild(cl); bx.appendChild(ft);
+  ov.appendChild(bx); ov.onclick=function(e){ if(e.target===ov) document.body.removeChild(ov); };
+  document.body.appendChild(ov);
+}
+
+function openAIForCase(caseId){
+  var d=getData(); var c=d.cases.find(function(x){ return x.id===caseId; }); if(!c) return;
+  var evs=d.events.filter(function(ev){ return ev.caseId===caseId&&ev.date&&daysTo(ev.date)>=0; });
+  evs.sort(function(a,b){ return a.date.localeCompare(b.date); });
+  var q=T('יש לי תיק משפטי בשם "'+c.name+'"','I have a legal case "'+c.name+'"');
+  if(c.proc){ var pObj=PROCS.find(function(x){ return x.k===c.proc; }); if(pObj) q+=T(' — '+pObj.he,' — '+pObj.en); }
+  if(evs.length>0) q+=T('\nהמועד הקרוב ביותר: '+evs[0].title+' בתאריך '+fmtDate(evs[0].date),'\nNearest deadline: '+evs[0].title+' on '+fmtDate(evs[0].date));
+  q+=T('\nמה עלי לדעת ולהכין?','\nWhat should I know and prepare?');
+  openAI(q);
+}
+
+function openAIForLaw(lawHe,lawRef,lawDays){
+  var q=T('בנוגע ל"'+lawHe+'" ('+lawRef+') — מועד: '+lawDays+' יום. ','Regarding "'+lawHe+'" ('+lawRef+') — deadline: '+lawDays+' days. ');
+  q+=T('האם יש חריגים להארכת מועד זה? מה ההשלכות של חריגה ממועד זה?','Are there exceptions to extend this deadline? What are the consequences of missing it?');
+  openAI(q);
+}
 function loadGoogleApi(){
   var s=document.createElement('script'); s.src='https://accounts.google.com/gsi/client';
   s.onload=function(){ gcalReady=true; }; document.head.appendChild(s);
@@ -2561,6 +3049,9 @@ function init(){
   if(!localStorage.getItem(APP+'_fr')) showGuide();
   renderDash(); applyLbls();
   setTimeout(checkAndShowNotifications, 1500);
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  }
 }
 init();
 </script>
