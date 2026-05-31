@@ -363,7 +363,7 @@ body.en .tile-badge{left:auto;right:8px;}
 <!-- ══ MAIN ══ -->
 <div class="main">
 <div class="tb">
-  <span class="tb-title" id="tb-ttl">לוח בקרה</span>
+  <span class="tb-title" id="tb-ttl" onclick="go('pg-dash')" style="cursor:pointer;">לוח בקרה</span>
   <div class="tb-search">
     <div class="tb-search-wrap">
       <span class="tb-search-icon">🔍</span>
@@ -371,12 +371,14 @@ body.en .tile-badge{left:auto;right:8px;}
     </div>
   </div>
   <div class="tb-actions">
+    <button class="ib" onclick="go('pg-dash')" id="tb-home-btn" title="לוח בקרה">🏠</button>
     <button class="ib" onclick="toggleLang()">🌐 <span id="lang-lbl">EN</span></button>
     <button class="ib" onclick="go('pg-design')">🎨</button>
     <button class="ib" onclick="shareApp()">📣</button>
     <button class="ib ib-prim" id="tb-add-btn" onclick="openNewCase()">＋ תיק חדש</button>
   </div>
 </div>
+<div class="l2-topnav" id="l2-topnav" style="display:none;"></div>
 
 <!-- DASHBOARD -->
 <div class="pg on" id="pg-dash"></div>
@@ -710,6 +712,9 @@ function go(pg){
   var tt=document.getElementById('tb-ttl'); if(tt) tt.textContent=T(titles[0],titles[1]);
   var ab=document.getElementById('tb-add-btn');
   if(ab){ ab.textContent=T('＋ תיק חדש','＋ New Case'); ab.onclick=openNewCase; }
+  var hb=document.getElementById('tb-home-btn');
+  if(hb) hb.style.display=(pg==='pg-dash'?'none':'inline-flex');
+  buildL2Nav();
 }
 function onGo(pg){
   if(pg==='pg-dash') renderDash();
@@ -745,6 +750,31 @@ function applyLbls(){
   var ui=document.getElementById('inp-uname'); if(ui) ui.value=uname;
 }
 
+var L2NAV_ITEMS=[
+  {he:'בית',en:'Home',pg:'pg-dash'},
+  {he:'לקוחות',en:'Clients',pg:'pg-clients'},
+  {he:'תיקים',en:'Cases',pg:'pg-cases'},
+  {he:'מועדים',en:'Deadlines',pg:'pg-dl'},
+  {he:'יומן',en:'Calendar',pg:'pg-cal'},
+  {he:'לוג',en:'Log',pg:'pg-log'},
+  {he:'שעות',en:'Hours',pg:'pg-hours'},
+  {he:'חוקי סד"פ',en:'Rules',pg:'pg-laws'},
+  {he:'התראות',en:'Alerts',pg:'pg-alerts'},
+  {he:'דוחות',en:'Reports',pg:'pg-rep'},
+  {he:'מחשבון',en:'Calc',pg:'pg-calc'},
+  {he:'הגדרות',en:'Settings',pg:'pg-set'}
+];
+function buildL2Nav(){
+  var nav=document.getElementById('l2-topnav'); if(!nav) return;
+  if(uiLayout!==2){ nav.style.display='none'; return; }
+  nav.style.display='flex'; nav.innerHTML='';
+  L2NAV_ITEMS.forEach(function(it){
+    var item=document.createElement('div'); item.className='l2-nav-item'+(curPg===it.pg?' on':'');
+    item.textContent=T(it.he,it.en);
+    item.onclick=function(){ go(it.pg); };
+    nav.appendChild(item);
+  });
+}
 function buildSidebar(){
   var nav=document.getElementById('sb-nav'); nav.innerHTML='';
   var NAV_SECTIONS=[
@@ -903,29 +933,6 @@ function renderDashL1(TILES,STATS,d,urgEvs){
 function renderDashL2(TILES,STATS,d,urgEvs){
   var pg=document.getElementById('pg-dash'); pg.innerHTML='';
   pg.style.padding='0';
-  var topnav=document.createElement('div'); topnav.className='l2-topnav';
-  var NAV2=[
-    {he:'בית',en:'Home',pg:'pg-dash',icon:'⊞'},
-    {he:'לקוחות',en:'Clients',pg:'pg-clients',icon:'👤',badge:0},
-    {he:'תיקים',en:'Cases',pg:'pg-cases',icon:'📁',badge:0},
-    {he:'מועדים',en:'Deadlines',pg:'pg-dl',icon:'⏰',badge:TILES[2].badge},
-    {he:'יומן',en:'Calendar',pg:'pg-cal',icon:'📅',badge:0},
-    {he:'לוג',en:'Log',pg:'pg-log',icon:'📋',badge:0},
-    {he:'שעות',en:'Hours',pg:'pg-hours',icon:'⌛',badge:0},
-    {he:'חוקי סד"פ',en:'Rules',pg:'pg-laws',icon:'⚖️',badge:0},
-    {he:'התראות',en:'Alerts',pg:'pg-alerts',icon:'🔔',badge:TILES[7].badge},
-    {he:'דוחות',en:'Reports',pg:'pg-rep',icon:'📊',badge:0},
-    {he:'מחשבון',en:'Calc',pg:'pg-calc',icon:'🧮',badge:0},
-    {he:'הגדרות',en:'Settings',pg:'pg-set',icon:'⚙️',badge:0}
-  ];
-  NAV2.forEach(function(it){
-    var item=document.createElement('div'); item.className='l2-nav-item'+(curPg===it.pg?' on':'');
-    item.textContent=T(it.he,it.en);
-    if(it.badge){ var dot=document.createElement('span'); dot.className='l2-nav-item-dot'; dot.textContent=it.badge; item.appendChild(dot); }
-    item.onclick=function(){ go(it.pg); };
-    topnav.appendChild(item);
-  });
-  pg.appendChild(topnav);
   var body=document.createElement('div'); body.className='l2-body';
   body.appendChild(mkStatsRow(STATS));
   var grid=document.createElement('div'); grid.className='l2-grid';
@@ -2182,7 +2189,7 @@ function mkTa(lbl){ var w=document.createElement('div'); w.className='fg'; var l
    INIT
 ══════════════════════════════════════ */
 function init(){
-  loadCfg(); applyTheme(); buildSidebar(); loadGoogleApi();
+  loadCfg(); applyTheme(); buildSidebar(); buildL2Nav(); loadGoogleApi();
   if(!localStorage.getItem(APP+'_fr')) showGuide();
   renderDash(); applyLbls();
 }
