@@ -317,27 +317,30 @@ body.en .l3-stat:last-child{border-right:none;}
 /* notification badge shared */
 .tile-badge{position:absolute;top:8px;left:8px;min-width:18px;height:18px;border-radius:99px;background:var(--red);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;}
 body.en .tile-badge{left:auto;right:8px;}
+/* ══ BOTTOM NAV (mobile only) ══ */
+.bnav{display:none;position:fixed;bottom:0;right:0;left:0;background:var(--bg2);border-top:1px solid var(--brd);z-index:200;height:56px;flex-direction:row;}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;border:none;background:none;font-family:'Heebo',sans-serif;padding:4px 0;position:relative;}
+.bnav-icon{font-size:20px;line-height:1;}
+.bnav-lbl{font-size:9px;font-weight:600;color:var(--txt3);}
+.bnav-item.on .bnav-lbl{color:var(--acc);}
+.bnav-badge{position:absolute;top:3px;right:calc(50% - 14px);min-width:14px;height:14px;border-radius:99px;background:var(--red);color:#fff;font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;}
 @media(max-width:768px){
+  .sb{display:none!important;}
+  .main{margin-right:0!important;margin-left:0!important;padding-bottom:56px;}
+  .bnav{display:flex;}
   .l1-grid{grid-template-columns:repeat(2,1fr);}
   .l2-grid{grid-template-columns:repeat(2,1fr);}
-  .l3-sb{width:100%;height:auto;position:relative;}
-  .l3-main{margin-right:0!important;margin-left:0!important;}
   .l3-grid{grid-template-columns:repeat(2,1fr);}
   .dash-stats-row{grid-template-columns:1fr 1fr;}
-}
-@media(max-width:768px){
-  .sb{width:100%;height:auto;position:relative;flex-direction:column;}
-  .sb-nav{flex-direction:row;flex-wrap:nowrap;overflow-x:auto;padding:4px 0;scrollbar-width:none;}
-  .sb-item{padding:7px 12px;white-space:nowrap;flex-shrink:0;}
-  .sb-item.on::before{display:none;}
-  .sb-footer{display:none;}
-  .app{flex-direction:column;}
-  .main{margin-right:0!important;margin-left:0!important;}
-  .stats{grid-template-columns:1fr 1fr;}
   .fgrid,.fgrid3{grid-template-columns:1fr;}
-  .pg{padding:14px;}
-  .tb{flex-wrap:wrap;height:auto;padding:8px 14px;gap:6px;}
-  .tb-search{max-width:100%;order:3;width:100%;}
+  .pg{padding:12px 12px 14px;}
+  .tb{flex-wrap:nowrap;height:auto;padding:6px 10px;gap:5px;overflow-x:auto;}
+  .tb-title{font-size:13px;flex-shrink:0;}
+  .tb-search{display:none;}
+  .ib{padding:0 8px;height:30px;font-size:11px;flex-shrink:0;}
+  .ib-prim{padding:0 10px;}
+  .mo-box{max-width:100%!important;max-height:95vh!important;border-radius:var(--rl) var(--rl) 0 0!important;margin-bottom:0!important;}
+  .mo{align-items:flex-end!important;padding:0!important;}
 }
 </style>
 </head>
@@ -508,6 +511,7 @@ body.en .tile-badge{left:auto;right:8px;}
 </div>
 
 </div><!-- /main -->
+<nav class="bnav" id="bnav"></nav>
 </div><!-- /app -->
 
 <script>
@@ -1042,7 +1046,15 @@ var CALC_TYPES=[
   {k:'civil',he:'תביעה אזרחית',en:'Civil Claim',rates:[{from:0,to:50000,pct:10},{from:50000,to:200000,pct:7},{from:200000,to:1000000,pct:5},{from:1000000,to:999999999,pct:3}]},
   {k:'labor',he:'תביעת עבודה',en:'Labor Claim',rates:[{from:0,to:100000,pct:15},{from:100000,to:999999999,pct:10}]},
   {k:'criminal',he:'תיק פלילי',en:'Criminal Case',fixed:5000,hourly:500},
-  {k:'notary',he:'עסקת נוטריון',en:'Notary Transaction',rates:[{from:0,to:500000,pct:0.5},{from:500000,to:999999999,pct:0.25}]}
+  {k:'admin',he:'עתירה מנהלית',en:'Administrative Petition',fixed:8000,hourly:500},
+  {k:'realestate',he:'עסקת מקרקעין',en:'Real Estate Transaction',rates:[{from:0,to:1000000,pct:0.5},{from:1000000,to:999999999,pct:0.25}]},
+  {k:'family',he:'תיק משפחה',en:'Family Case',fixed:6000,hourly:500},
+  {k:'notary',he:'עסקת נוטריון',en:'Notary Transaction',rates:[{from:0,to:500000,pct:0.5},{from:500000,to:999999999,pct:0.25}]},
+  {k:'company',he:'הקמת חברה / עסק',en:'Company Formation',fixed:3000,hourly:400},
+  {k:'contract',he:'עריכת חוזה',en:'Contract Drafting',fixed:2000,hourly:450},
+  {k:'inheritance',he:'עיזבון וירושה',en:'Inheritance & Estate',fixed:4000,hourly:450},
+  {k:'bankruptcy',he:'חדלות פירעון',en:'Insolvency',fixed:10000,hourly:550},
+  {k:'ip',he:'קניין רוחני',en:'Intellectual Property',fixed:5000,hourly:500}
 ];
 
 /* ══════════════════════════════════════
@@ -1214,6 +1226,9 @@ function go(pg){
   var hb=document.getElementById('tb-home-btn');
   if(hb) hb.style.display=(pg==='pg-dash'?'none':'inline-flex');
   buildL2Nav();
+  var d=getData(); var ac=0;
+  d.events.forEach(function(ev){ if(!ev.date) return; var dy=daysTo(ev.date); if(dy>=0&&dy<=7) ac++; });
+  buildBottomNav(ac);
 }
 function onGo(pg){
   if(pg==='pg-dash') renderDash();
@@ -1263,6 +1278,70 @@ var L2NAV_ITEMS=[
   {he:'מחשבון',en:'Calc',pg:'pg-calc'},
   {he:'הגדרות',en:'Settings',pg:'pg-set'}
 ];
+var BNAV_ITEMS=[
+  {icon:'⊞',he:'בית',en:'Home',pg:'pg-dash'},
+  {icon:'📁',he:'תיקים',en:'Cases',pg:'pg-cases'},
+  {icon:'⏰',he:'מועדים',en:'Deadlines',pg:'pg-dl'},
+  {icon:'🔔',he:'התראות',en:'Alerts',pg:'pg-alerts'},
+  {icon:'☰',he:'עוד',en:'More',pg:'_more'}
+];
+function buildBottomNav(alertCount){
+  var nav=document.getElementById('bnav'); if(!nav) return;
+  nav.innerHTML='';
+  BNAV_ITEMS.forEach(function(it){
+    var btn=document.createElement('button'); btn.className='bnav-item'+(curPg===it.pg?' on':'');
+    var ic=document.createElement('span'); ic.className='bnav-icon'; ic.textContent=it.icon;
+    var lbl=document.createElement('span'); lbl.className='bnav-lbl'; lbl.textContent=T(it.he,it.en);
+    btn.appendChild(ic); btn.appendChild(lbl);
+    if(it.pg==='pg-alerts'&&alertCount>0){ var badge=document.createElement('span'); badge.className='bnav-badge'; badge.textContent=alertCount; btn.appendChild(badge); }
+    btn.onclick=function(){
+      if(it.pg==='_more'){ openMoreMenu(); return; }
+      go(it.pg);
+    };
+    nav.appendChild(btn);
+  });
+}
+function openMoreMenu(){
+  var ov=mkOv(); var bx=mkBx();
+  bx.appendChild(mkMoHd(T('תפריט','Menu'),ov));
+  var body=document.createElement('div'); body.className='mo-body'; body.style.padding='8px 0';
+  var MORE=[
+    {icon:'👤',he:'לקוחות',en:'Clients',pg:'pg-clients'},
+    {icon:'📅',he:'יומן',en:'Calendar',pg:'pg-cal'},
+    {icon:'📋',he:'לוג פעולות',en:'Activity Log',pg:'pg-log'},
+    {icon:'⌛',he:'שעות ושכר',en:'Hours & Fees',pg:'pg-hours'},
+    {icon:'⚖️',he:'חוקי סד"פ',en:'Proc. Rules',pg:'pg-laws'},
+    {icon:'📊',he:'דוחות',en:'Reports',pg:'pg-rep'},
+    {icon:'🧮',he:'מחשבון שכר',en:'Fee Calc',pg:'pg-calc'},
+    {icon:'⚙️',he:'הגדרות',en:'Settings',pg:'pg-set'},
+    {icon:'ℹ️',he:'אודות',en:'About',pg:'pg-about'}
+  ];
+  MORE.forEach(function(it){
+    var row=document.createElement('button'); row.style.cssText='display:flex;align-items:center;gap:12px;padding:12px 20px;width:100%;background:none;border:none;border-bottom:1px solid var(--brd);font-family:"Heebo",sans-serif;font-size:14px;color:var(--txt);cursor:pointer;text-align:right;';
+    if(lang==='en') row.style.textAlign='left';
+    var ic=document.createElement('span'); ic.style.fontSize='18px'; ic.textContent=it.icon;
+    var lbl=document.createElement('span'); lbl.textContent=T(it.he,it.en);
+    row.appendChild(ic); row.appendChild(lbl);
+    row.onmouseenter=function(){ row.style.background='var(--bg3)'; }; row.onmouseleave=function(){ row.style.background=''; };
+    row.onclick=function(){ document.body.removeChild(ov); go(it.pg); };
+    body.appendChild(row);
+  });
+  bx.appendChild(body);
+  var ft=document.createElement('div'); ft.className='mo-foot';
+  var cl=document.createElement('button'); cl.className='btn'; cl.textContent=T('סגור','Close'); cl.onclick=function(){ document.body.removeChild(ov); };
+  ft.appendChild(cl); bx.appendChild(ft);
+  ov.appendChild(bx); ov.onclick=function(e){ if(e.target===ov) document.body.removeChild(ov); };
+  document.body.appendChild(ov);
+}
+
+function markSeen(type,items){
+  try{
+    var seen={}; var sv=localStorage.getItem(APP+'_seen'); if(sv) seen=JSON.parse(sv);
+    items.forEach(function(item){ seen[type+'_'+item.id]=1; });
+    localStorage.setItem(APP+'_seen',JSON.stringify(seen));
+  }catch(x){}
+}
+
 function buildL2Nav(){
   var nav=document.getElementById('l2-topnav'); if(!nav) return;
   if(uiLayout!==2){ nav.style.display='none'; return; }
@@ -1355,20 +1434,36 @@ function showSearchResults(results){
 ══════════════════════════════════════ */
 function renderDash(){
   var d=getData();
-  var urg=0,wk=0,unpaid=0,alertCount=0;
-  d.events.forEach(function(ev){ if(!ev.date) return; var dy=daysTo(ev.date); if(dy>=0&&dy<=2) urg++; if(dy>=0&&dy<=7) wk++; });
-  d.logs.forEach(function(h){ if(h.amount) unpaid+=Number(h.amount||0); });
-  d.events.forEach(function(ev){ if(!ev.date) return; var dy=daysTo(ev.date); if((a1&&dy>=0&&dy<=1)||(a3&&dy>=0&&dy<=3)||(a7&&dy>=0&&dy<=7)) alertCount++; });
-  var newClients=d.clients.filter(function(c){ var dys=Math.round((new Date()-new Date(c.created||today()))/86400000); return dys<=7; }).length;
+  var urg=0,wk=0,alertCount=0;
+  d.events.forEach(function(ev){
+    if(!ev.date) return;
+    var dy=daysTo(ev.date);
+    if(dy>=0&&dy<=2) urg++;
+    if(dy>=0&&dy<=7) wk++;
+    if(dy>=0&&dy<=alertCount+999){
+      var threshold=alertCfg.deadlinesBefore&&alertCfg.deadlinesBefore.on?alertCfg.deadlinesBefore.days:7;
+      if(dy>=0&&dy<=threshold) alertCount++;
+    }
+  });
+  alertCount=0;
+  d.events.forEach(function(ev){
+    if(!ev.date) return; var dy=daysTo(ev.date);
+    var threshold=(alertCfg.deadlinesBefore&&alertCfg.deadlinesBefore.on)?alertCfg.deadlinesBefore.days:7;
+    if(dy>=0&&dy<=threshold) alertCount++;
+  });
+  var seen={}; try{ var sv=localStorage.getItem(APP+'_seen'); if(sv) seen=JSON.parse(sv); }catch(x){}
+  var newClients=d.clients.filter(function(c){ return !seen['cl_'+c.id]; }).length;
+  var newCases=d.cases.filter(function(c){ return !seen['cs_'+c.id]; }).length;
+  var totalLogHours=0; d.logs.forEach(function(lg){ totalLogHours+=Number(lg.hours||0); });
   var urgEvs=d.events.filter(function(ev){ return ev.date&&daysTo(ev.date)>=0&&daysTo(ev.date)<=14; });
   urgEvs.sort(function(a,b){ return a.date.localeCompare(b.date); });
   var TILES=[
     {icon:'👤',bg:'var(--acc-s)',col:'var(--acc)',he:'לקוחות',en:'Clients',pg:'pg-clients',sub:function(){ return d.clients.length+T(' רשומים',' registered'); },badge:newClients},
-    {icon:'📁',bg:'var(--gs)',col:'var(--grn)',he:'תיקים',en:'Cases',pg:'pg-cases',sub:function(){ return d.cases.length+T(' פעילים',' active'); },badge:0},
+    {icon:'📁',bg:'var(--gs)',col:'var(--grn)',he:'תיקים',en:'Cases',pg:'pg-cases',sub:function(){ return d.cases.filter(function(c){ return c.status!=='closed'; }).length+T(' פעילים',' active'); },badge:newCases},
     {icon:'⏰',bg:'var(--rs)',col:'var(--red)',he:'מועדים',en:'Deadlines',pg:'pg-dl',sub:function(){ return wk+T(' השבוע',' this week'); },badge:urg},
     {icon:'📅',bg:'var(--ps)',col:'var(--pur)',he:'יומן',en:'Calendar',pg:'pg-cal',sub:function(){ var m=new Date(); return T(['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'][m.getMonth()],''); },badge:0},
     {icon:'📋',bg:'var(--as)',col:'var(--amb)',he:'לוג פעולות',en:'Activity Log',pg:'pg-log',sub:function(){ return d.logs.length+T(' פעולות',' actions'); },badge:0},
-    {icon:'⌛',bg:'var(--gs)',col:'var(--grn)',he:'שעות ושכר',en:'Hours & Fees',pg:'pg-hours',sub:function(){ return fmtMoney(unpaid)+T(' מתועד',' logged'); },badge:unpaid>0?1:0},
+    {icon:'⌛',bg:'var(--gs)',col:'var(--grn)',he:'שעות ושכר',en:'Hours & Fees',pg:'pg-hours',sub:function(){ return totalLogHours.toFixed(1)+T(' שעות מתועדות',' hours logged'); },badge:0},
     {icon:'⚖️',bg:'var(--acc-s)',col:'var(--acc)',he:'חוקי סד"פ',en:'Proc. Rules',pg:'pg-laws',sub:function(){ var total=LAWS_CATS.reduce(function(s,c){ return s+c.items.length; },0); return total+T(' מועדים',' deadlines'); },badge:0},
     {icon:'🔔',bg:'var(--rs)',col:'var(--red)',he:'התראות',en:'Alerts',pg:'pg-alerts',sub:function(){ return alertCount+T(' פעילות',' active'); },badge:alertCount},
     {icon:'📊',bg:'var(--ps)',col:'var(--pur)',he:'דוחות',en:'Reports',pg:'pg-rep',sub:function(){ return 'PDF · CSV'; },badge:0},
@@ -1377,14 +1472,15 @@ function renderDash(){
     {icon:'ℹ️',bg:'var(--bg3)',col:'var(--txt3)',he:'אודות',en:'About',pg:'pg-about',sub:function(){ return 'AppNest 2026'; },badge:0}
   ];
   var STATS=[
-    {n:d.cases.length,l:T('תיקים פעילים','Active Cases'),cls:'ds-acc'},
-    {n:urg,l:T('מועדים דחופים','Urgent Deadlines'),cls:'ds-red'},
+    {n:d.cases.filter(function(c){ return c.status!=='closed'; }).length,l:T('תיקים פעילים','Active Cases'),cls:'ds-acc'},
+    {n:urg>0?urg:wk,l:urg>0?T('מועדים דחופים','Urgent Deadlines'):T('מועדים השבוע','Deadlines This Week'),cls:'ds-red'},
     {n:d.clients.length,l:T('לקוחות','Clients'),cls:'ds-grn'},
-    {n:fmtMoney(unpaid),l:T('שכ"ט מתועד','Logged Fees'),cls:'ds-amb'}
+    {n:alertCount,l:T('התראות פעילות','Active Alerts'),cls:'ds-amb'}
   ];
   if(uiLayout===2){ renderDashL2(TILES,STATS,d,urgEvs); }
   else if(uiLayout===3){ renderDashL3(TILES,STATS,d,urgEvs); }
   else { renderDashL1(TILES,STATS,d,urgEvs); }
+  buildBottomNav(alertCount);
 }
 
 function mkStatsRow(stats){
@@ -1499,6 +1595,7 @@ function renderDashL3(TILES,STATS,d,urgEvs){
 ══════════════════════════════════════ */
 var clCustomFrom=null, clCustomTo=null;
 function renderClients(){
+  var d=getData(); markSeen('cl',d.clients);
   buildFbar('cl-fbar',clF,clCustomFrom,clCustomTo,function(f,a,b){ clF=f; clCustomFrom=a; clCustomTo=b; },renderClientsList);
   var hd=document.getElementById('cl-fbar');
   if(hd){
@@ -1658,6 +1755,7 @@ function openEditClient(clientId){
 ══════════════════════════════════════ */
 var csCustomFrom=null, csCustomTo=null;
 function renderCases(){
+  var d=getData(); markSeen('cs',d.cases);
   buildFbar('cs-fbar',csF,csCustomFrom,csCustomTo,function(f,a,b){ csF=f; csCustomFrom=a; csCustomTo=b; },renderCasesList);
   var hd=document.getElementById('cs-fbar');
   if(hd){
@@ -1843,18 +1941,35 @@ function openEditCase(caseId){
   var fSvc=mkFld(T('תאריך המצאה','Service Date'),'date'); fSvc.i.value=c.serviceDate||'';
   grid3.appendChild(fStatus.w); grid3.appendChild(fSvc.w); body.appendChild(grid3);
   var grid4=document.createElement('div'); grid4.className='fgrid';
-  var fFee=mkFld(T('שכר טרחה (₪)','Fee (₪)'),'number'); fFee.i.value=c.fee||'';
-  var fPayStatus=mkSel(T('תשלום','Payment'),PAYMENT_STATUS); fPayStatus.i.value=c.payStatus||'pending';
+  var fFee=mkFld(T('שכר טרחה מוסכם (₪)','Agreed Fee (₪)'),'number'); fFee.i.value=c.fee||'';
+  var fPayStatus=mkSel(T('סטטוס תשלום','Payment Status'),PAYMENT_STATUS); fPayStatus.i.value=c.payStatus||'pending';
   grid4.appendChild(fFee.w); grid4.appendChild(fPayStatus.w); body.appendChild(grid4);
+  var grid5=document.createElement('div'); grid5.className='fgrid';
+  var fPaid=mkFld(T('סכום ששולם (₪)','Amount Paid (₪)'),'number'); fPaid.i.value=c.paidAmount||'';
+  var balanceDiv=document.createElement('div'); balanceDiv.className='fg';
+  var balLbl=document.createElement('label'); balLbl.className='fl'; balLbl.textContent=T('יתרה לתשלום','Balance Due');
+  var balVal=document.createElement('div'); balVal.style.cssText='padding:9px 12px;background:var(--rs);border-radius:var(--r);font-size:14px;font-weight:700;color:var(--rt);';
+  function updateBalance(){ var fee=parseFloat(fFee.i.value)||0; var paid=parseFloat(fPaid.i.value)||0; var bal=fee-paid; balVal.textContent=fmtMoney(Math.max(0,bal)); balVal.style.background=bal<=0?'var(--gs)':'var(--rs)'; balVal.style.color=bal<=0?'var(--gt)':'var(--rt)'; }
+  updateBalance(); fFee.i.oninput=updateBalance; fPaid.i.oninput=updateBalance;
+  balanceDiv.appendChild(balLbl); balanceDiv.appendChild(balVal);
+  grid5.appendChild(fPaid.w); grid5.appendChild(balanceDiv); body.appendChild(grid5);
   var fNotes=mkTa(T('הערות','Notes')); fNotes.i.value=c.notes||''; body.appendChild(fNotes.w);
   bx.appendChild(body);
   var ft=document.createElement('div'); ft.className='mo-foot';
   var sv=document.createElement('button'); sv.className='btn btn-prim'; sv.textContent=T('שמור','Save');
+  var oldStatus=c.status;
   sv.onclick=function(){
     c.clientId=fClient.i.value; c.name=fName.i.value.trim(); c.caseNum=fNum.i.value.trim();
-    c.court=fCourt.i.value; c.proc=fProc.i.value; c.status=fStatus.i.value;
-    c.serviceDate=fSvc.i.value; c.fee=fFee.i.value; c.payStatus=fPayStatus.i.value; c.notes=fNotes.i.value.trim();
-    saveData(d); document.body.removeChild(ov); toast(T('נשמר','Saved')); renderCases(); renderDash();
+    c.court=fCourt.i.value; c.proc=fProc.i.value;
+    var newStatus=fStatus.i.value; c.status=newStatus;
+    c.serviceDate=fSvc.i.value; c.fee=fFee.i.value; c.payStatus=fPayStatus.i.value;
+    c.paidAmount=fPaid.i.value; c.notes=fNotes.i.value.trim();
+    saveData(d); document.body.removeChild(ov); toast(T('נשמר','Saved'));
+    if(newStatus!==oldStatus&&alertCfg.notifyOnStatusChange&&alertCfg.notifyOnStatusChange.on){
+      pendingNotifications.push({id:uid(),type:'client-update',caseId:c.id,title:T('סטטוס תיק השתנה','Case Status Changed'),body:T('תיק "'+c.name+'" — '+newStatus+'. האם לעדכן את הלקוח?','Case "'+c.name+'" → '+newStatus+'. Update client?')});
+      savePendingNotifs(); setTimeout(checkAndShowNotifications,500);
+    }
+    renderCases(); renderDash();
   };
   var del=document.createElement('button'); del.className='btn btn-red'; del.textContent=T('🗑 מחק','🗑 Delete');
   del.onclick=function(){
@@ -1923,7 +2038,7 @@ function mkEvRow(ev,d,showEdit,parentOv){
 
 function openNewEvent(caseId){
   var d=getData(); var ov=mkOv(); var bx=mkBx();
-  bx.appendChild(mkMoHd(T('מועד / אירוע חדש','New Deadline'),ov));
+  bx.appendChild(mkMoHd(T('הוסף מועד לתיק','Add Deadline'),ov));
   var body=document.createElement('div'); body.className='mo-body';
   var fCase;
   if(!caseId){
@@ -1931,23 +2046,50 @@ function openNewEvent(caseId){
     cOpts.unshift({k:'',he:'— בחר תיק —',en:'— Select Case —'});
     fCase=mkSel(T('תיק','Case'),cOpts); body.appendChild(fCase.w);
   }
+  var modeLbl=document.createElement('div'); modeLbl.className='fl'; modeLbl.textContent=T('סוג הוספה','Type'); body.appendChild(modeLbl);
+  var modeBtns=document.createElement('div'); modeBtns.style.cssText='display:flex;gap:8px;margin-bottom:14px;';
+  var mManual=document.createElement('button'); mManual.className='btn btn-prim'; mManual.style.flex='1'; mManual.textContent=T('📅 אירוע ידני','📅 Manual Event');
+  var mCalc=document.createElement('button'); mCalc.className='btn'; mCalc.style.flex='1'; mCalc.textContent=T('🧮 חשב לפי המצאה','🧮 Calc from Service');
+  modeBtns.appendChild(mManual); modeBtns.appendChild(mCalc); body.appendChild(modeBtns);
+  var manualSection=document.createElement('div');
+  var calcSection=document.createElement('div'); calcSection.style.display='none';
   var grid=document.createElement('div'); grid.className='fgrid';
-  var fTitle=mkFld(T('כותרת','Title'),'text');
+  var fTitle=mkFld(T('כותרת האירוע','Event Title'),'text');
   var fDate=mkFld(T('תאריך','Date'),'date');
-  grid.appendChild(fTitle.w); grid.appendChild(fDate.w); body.appendChild(grid);
+  grid.appendChild(fTitle.w); grid.appendChild(fDate.w); manualSection.appendChild(grid);
   var grid2=document.createElement('div'); grid2.className='fgrid';
   var fType=mkSel(T('סוג','Type'),EV_TYPES);
   var fRef=mkFld(T('תקנה / סעיף','Rule'),'text');
-  grid2.appendChild(fType.w); grid2.appendChild(fRef.w); body.appendChild(grid2);
-  var fNotes=mkTa(T('הערות','Notes')); body.appendChild(fNotes.w);
+  grid2.appendChild(fType.w); grid2.appendChild(fRef.w); manualSection.appendChild(grid2);
+  var fNotes=mkTa(T('הערות','Notes')); manualSection.appendChild(fNotes.w);
+  var fSvc=mkFld(T('תאריך המצאה','Service Date'),'date'); calcSection.appendChild(fSvc.w);
+  var fProc2=mkSel(T('סוג הליך','Procedure'),PROCS); calcSection.appendChild(fProc2.w);
+  var calcResult=document.createElement('div'); calcResult.style.cssText='background:var(--bg3);border-radius:var(--r);padding:10px 12px;margin-top:8px;font-size:12px;color:var(--txt2);min-height:40px;'; calcResult.textContent=T('בחר תאריך והליך לחישוב','Select date and procedure');
+  calcSection.appendChild(calcResult);
+  function doPreview(){ var svc=fSvc.i.value; var proc=fProc2.i.value; if(!svc){ calcResult.textContent=T('חסר תאריך המצאה','Missing service date'); return; } var dummy={id:'_',proc:proc,serviceDate:svc}; var tmpD=getData(); var tmpEvs=[]; calcAutoDeadlines(tmpD,dummy); var added=tmpD.events.filter(function(ev){ return ev.caseId==='_'; }); calcResult.innerHTML=''; if(added.length===0){ calcResult.textContent=T('אין מועדים אוטומטיים לסוג הליך זה','No auto deadlines for this procedure'); return; } added.forEach(function(ev){ var row=document.createElement('div'); row.style.cssText='padding:3px 0;border-bottom:1px solid var(--brd);'; row.textContent='• '+ev.title+' — '+fmtDate(ev.date)+(ev.ref?' ('+ev.ref+')':''); calcResult.appendChild(row); }); }
+  fSvc.i.oninput=doPreview; fProc2.i.onchange=doPreview;
+  body.appendChild(manualSection); body.appendChild(calcSection);
+  var mode='manual';
+  mManual.onclick=function(){ mode='manual'; manualSection.style.display='block'; calcSection.style.display='none'; mManual.className='btn btn-prim'; mManual.style.flex='1'; mCalc.className='btn'; mCalc.style.flex='1'; };
+  mCalc.onclick=function(){ mode='calc'; manualSection.style.display='none'; calcSection.style.display='block'; mCalc.className='btn btn-prim'; mCalc.style.flex='1'; mManual.className='btn'; mManual.style.flex='1'; };
   bx.appendChild(body);
   var ft=document.createElement('div'); ft.className='mo-foot';
-  var sv=document.createElement('button'); sv.className='btn btn-prim'; sv.textContent=T('✓ הוסף','✓ Add');
+  var sv=document.createElement('button'); sv.className='btn btn-prim';
+  sv.textContent=T('✓ הוסף','✓ Add');
   sv.onclick=function(){
-    var ti=fTitle.i.value.trim(); if(!ti){ toast(T('חסרה כותרת','Title required')); return; }
     var cid=caseId||(fCase?fCase.i.value:'');
-    d.events.push({id:uid(),caseId:cid,title:ti,type:fType.i.value,date:fDate.i.value,ref:fRef.i.value.trim(),notes:fNotes.i.value.trim(),created:today()});
-    saveData(d); document.body.removeChild(ov); toast(T('נוסף!','Added!')); renderDash();
+    if(mode==='manual'){
+      var ti=fTitle.i.value.trim(); if(!ti){ toast(T('חסרה כותרת','Title required')); return; }
+      if(!fDate.i.value){ toast(T('חסר תאריך','Date required')); return; }
+      d.events.push({id:uid(),caseId:cid,title:ti,type:fType.i.value,date:fDate.i.value,ref:fRef.i.value.trim(),notes:fNotes.i.value.trim(),created:today()});
+      saveData(d); document.body.removeChild(ov); toast(T('נוסף!','Added!')); renderDash(); if(curPg==='pg-dl') renderDl();
+    } else {
+      if(!fSvc.i.value){ toast(T('חסר תאריך המצאה','Service date required')); return; }
+      var tmpCase={id:uid(),proc:fProc2.i.value,serviceDate:fSvc.i.value,clientId:''};
+      if(cid) tmpCase.id=cid;
+      calcAutoDeadlines(d,{id:cid||tmpCase.id,proc:fProc2.i.value,serviceDate:fSvc.i.value});
+      saveData(d); document.body.removeChild(ov); toast(T('מועדים חושבו ונוספו!','Deadlines calculated!')); renderDash(); if(curPg==='pg-dl') renderDl();
+    }
   };
   var cl=document.createElement('button'); cl.className='btn'; cl.textContent=T('ביטול','Cancel'); cl.onclick=function(){ document.body.removeChild(ov); };
   ft.appendChild(sv); ft.appendChild(cl); bx.appendChild(ft);
@@ -2167,14 +2309,33 @@ function openEditLog(logId){
    HOURS & FEES
 ══════════════════════════════════════ */
 var hrCustomFrom=null, hrCustomTo=null;
+var hrCaseFilter='all';
 function renderHours(){
+  var d=getData();
   buildFbar('hr-fbar',hrF,hrCustomFrom,hrCustomTo,function(f,a,b){ hrF=f; hrCustomFrom=a; hrCustomTo=b; },renderHoursList);
+  var hd=document.getElementById('hr-fbar');
+  if(hd){
+    var sep=document.createElement('div'); sep.className='fb-sep'; hd.appendChild(sep);
+    var caseOpts=[{k:'all',he:'כל התיקים',en:'All Cases'}].concat(d.cases.map(function(c){ return {k:c.id,he:c.name,en:c.name}; }));
+    var fb=document.createElement('button'); fb.className='fb'+(hrCaseFilter==='all'?' on':'');
+    fb.textContent=T('כל התיקים','All Cases');
+    fb.onclick=function(){ hrCaseFilter='all'; renderHours(); };
+    hd.appendChild(fb);
+    if(d.cases.length>0){
+      var sel=document.createElement('select'); sel.style.cssText='border:1px solid var(--brd);border-radius:99px;padding:5px 12px;font-size:12px;background:var(--bg2);color:var(--txt);font-family:"Heebo",sans-serif;cursor:pointer;';
+      var defOpt=document.createElement('option'); defOpt.value=''; defOpt.textContent=T('סנן לפי תיק...','Filter by case...'); sel.appendChild(defOpt);
+      d.cases.forEach(function(c){ var op=document.createElement('option'); op.value=c.id; op.textContent=c.name; if(hrCaseFilter===c.id) op.selected=true; sel.appendChild(op); });
+      sel.onchange=function(){ hrCaseFilter=sel.value||'all'; renderHoursList(); };
+      hd.appendChild(sel);
+    }
+  }
   renderHoursList();
 }
 function renderHoursList(){
   var d=getData(); var card=document.getElementById('hours-card'); card.innerHTML='';
   var logs=d.logs.filter(function(lg){ return lg.hours>0; });
   logs=filterByDate(logs,'date',hrF,hrCustomFrom,hrCustomTo);
+  if(hrCaseFilter&&hrCaseFilter!=='all') logs=logs.filter(function(lg){ return lg.caseId===hrCaseFilter; });
   logs.sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
   var totalHours=0; var totalAmount=0; var totalPaid=0; var totalPending=0;
   var caseAmounts={};
@@ -3045,7 +3206,7 @@ function mkTa(lbl){ var w=document.createElement('div'); w.className='fg'; var l
    INIT
 ══════════════════════════════════════ */
 function init(){
-  loadCfg(); applyTheme(); buildSidebar(); buildL2Nav(); loadGoogleApi();
+  loadCfg(); applyTheme(); buildSidebar(); buildL2Nav(); buildBottomNav(0); loadGoogleApi();
   if(!localStorage.getItem(APP+'_fr')) showGuide();
   renderDash(); applyLbls();
   setTimeout(checkAndShowNotifications, 1500);
