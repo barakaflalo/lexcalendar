@@ -767,7 +767,7 @@ function renderAlerts(){
 var calY=0,calM=0;
 var dlF='week',repF='month',csF='all',clF='all',logF='all',hrF='month';
 var curPg='pg-dash';
-var uiLayout=1;
+var uiLayout=2;
 var gcalToken=null, gcalReady=false;
 var GCAL_ID='103222021522-p5pf90jrnn2bu775nhbec9jna8c24c1b.apps.googleusercontent.com';
 var GCAL_SCOPE='https://www.googleapis.com/auth/calendar.events';
@@ -1072,7 +1072,7 @@ function saveData(d){
 function loadCfg(){
   try{
     var s=localStorage.getItem(APP+'_cfg');
-    if(s){ var o=JSON.parse(s); lang=o.lang||'he'; theme=o.theme||'default'; uname=o.uname||''; uprof=o.uprof||'lawyer'; a7=o.a7!==false; a3=o.a3!==false; a1=o.a1!==false; uiLayout=o.uiLayout||1; }
+    if(s){ var o=JSON.parse(s); lang=o.lang||'he'; theme=o.theme||'default'; uname=o.uname||''; uprof=o.uprof||'lawyer'; a7=o.a7!==false; a3=o.a3!==false; a1=o.a1!==false; uiLayout=o.uiLayout||2; }
   }catch(x){}
   loadAlertCfg(); loadPendingNotifs();
 }
