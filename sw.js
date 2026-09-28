@@ -1,8 +1,8 @@
 /* LexCalendar Service Worker — network-first למעטפת, בלי התערבות בבקשות ממקור אחר.
    בכל עדכון: להעלות את VERSION (אחרת משתמשים יקבלו גרסה ישנה מהמטמון). */
-var VERSION = '3.0.0';
+var VERSION = '3.1.0';
 var CACHE = 'lexcalendar-app-' + VERSION;
-var SHELL = ['./', './index.html', './appnest-assistant.js?v=3.0.0', './manifest.json', './icon-192.png', './icon-512.png', './privacy_policy.html'];
+var SHELL = ['./', './index.html', './appnest-assistant.js?v=3.1.0', './lex-laws.js?v=3.1.0', './lex-help.js?v=3.1.0', './manifest.json', './icon-192.png', './icon-512.png', './privacy_policy.html'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(
