@@ -11,6 +11,12 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>LexCalendar — מערכת ניהול משפטית</title>
+<script>
+/* יומן שגיאות — נטען ראשון, שומר 10 אחרונות לדוח האבחון (בלי תוכן אישי) */
+(function(){function log(m,f,l){try{var k='lxc2_errs';var a=JSON.parse(localStorage.getItem(k)||'[]');a.push({m:String(m||'').slice(0,200),f:String(f||'').split('/').pop().split('?')[0],l:l||0,t:new Date().toISOString()});localStorage.setItem(k,JSON.stringify(a.slice(-10)));}catch(x){}}
+window.addEventListener('error',function(e){log(e.message,e.filename,e.lineno);});
+window.addEventListener('unhandledrejection',function(e){var r=e.reason;log('Promise: '+((r&&r.message)||r),'',0);});})();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ══ THEMES ══ */
@@ -41,6 +47,16 @@
 .ts{--bg:#faf8ff;--bg2:#fff;--bg3:#f3f0ff;--bg4:#ede9fe;
   --sb:#2e1065;--sb2:#3b0764;--acc:#7c3aed;--acc2:#6d28d9;--acc-s:#f5f3ff;--acc-t:#4c1d95;
   --txt:#1e1030;--txt2:#4c1d95;--txt3:#7c3aed;--brd:#ddd6fe;--brd2:#c4b5fd;}
+.tbg{--bg:#0b0b0f;--bg2:#141418;--bg3:#1c1c22;--bg4:#26262e;
+  --sb:#070709;--sb2:#101014;--sb-t:rgba(255,255,255,0.55);--sb-ta:#C9A84C;--sb-a:rgba(201,168,76,0.1);
+  --acc:#C9A84C;--acc2:#b8952e;--acc-s:rgba(201,168,76,0.12);--acc-t:#dcc070;
+  --txt:#f2efe6;--txt2:#b8b3a6;--txt3:#7d796f;--brd:#2a2a33;--brd2:#3a3a45;
+  --rs:#2a1215;--rt:#f19a9a;--as:#2a2110;--at:#e8c46a;--gs:#0f2a1f;--gt:#6fd3a5;--ps:#1f1733;--pt:#c3a8ff;
+  --sh:0 1px 3px rgba(0,0,0,0.4);--sh2:0 4px 16px rgba(0,0,0,0.5);--sh3:0 8px 30px rgba(0,0,0,0.6);}
+.tbg .btn-prim,.tbg .ib-prim,.tbg .fb.on,.tbg .fb[style],.tbg .sb-av,.tbg .l3-sb-av{color:#0b0b0f!important;}
+.tbg .cal-c.today .cal-num{color:#0b0b0f;}
+.tbg .sb-logo-mark,.tbg .about-mark{box-shadow:0 2px 10px rgba(201,168,76,0.35);}
+.tbg input,.tbg select,.tbg textarea{color-scheme:dark;}
 /* ══ RESET ══ */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--txt);direction:rtl;font-size:14px;line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased;}
@@ -317,6 +333,34 @@ body.en .l3-stat:last-child{border-right:none;}
 /* notification badge shared */
 .tile-badge{position:absolute;top:8px;left:8px;min-width:18px;height:18px;border-radius:99px;background:var(--red);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;}
 body.en .tile-badge{left:auto;right:8px;}
+/* ══ LOCK SCREEN (PIN) ══ */
+#lockscr{position:fixed;inset:0;z-index:300000;background:var(--sb);display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;}
+#lockscr.on{display:flex;}
+.lk-mark{width:64px;height:64px;border-radius:16px;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:32px;}
+.lk-title{color:#fff;font-size:18px;font-weight:700;}
+.lk-sub{color:rgba(255,255,255,.6);font-size:13px;min-height:18px;text-align:center;}
+.lk-dots{display:flex;gap:12px;direction:ltr;}
+.lk-dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.5);}
+.lk-dot.f{background:var(--acc);border-color:var(--acc);}
+.lk-pad{display:grid;grid-template-columns:repeat(3,72px);gap:12px;direction:ltr;}
+.lk-key{height:60px;border-radius:30px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-size:22px;font-family:'Heebo',sans-serif;cursor:pointer;}
+.lk-key:active{background:rgba(255,255,255,.18);}
+.lk-shake{animation:lkshake .35s;}
+@keyframes lkshake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.lk-forgot{background:none;border:none;color:rgba(255,255,255,.5);font-size:12px;cursor:pointer;font-family:'Heebo',sans-serif;text-decoration:underline;}
+/* מסך פרטיות כשהאפליקציה ברקע */
+body.priv .app{filter:blur(18px);}
+/* ══ AI STATUS + ASSISTANT ══ */
+#tb-ai-btn::after{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:#9ca3af;margin-inline-start:5px;}
+body.ai-on #tb-ai-btn::after{background:#22c55e;box-shadow:0 0 6px #22c55e;}
+body:not(.ai-on) #appnest-assistant-btn{display:none!important;}
+.ai-prov{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1px solid var(--brd);border-radius:var(--r);margin-bottom:6px;cursor:pointer;background:var(--bg2);}
+.ai-prov.on{border-color:var(--acc);background:var(--acc-s);}
+.ai-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;}
+.ai-steps{background:var(--bg3);border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--txt2);line-height:1.8;margin:8px 0 12px;}
+.ai-steps a{color:var(--acc);font-weight:600;}
+.warn-box{background:var(--as);color:var(--at);border:1px solid var(--amb);border-radius:var(--r);padding:10px 14px;font-size:12px;line-height:1.7;margin-bottom:14px;}
+#mod-bar{position:fixed;top:0;left:0;right:0;z-index:250000;background:var(--amb);color:#fff;text-align:center;padding:9px;font-size:13px;font-weight:600;cursor:pointer;display:none;}
 /* ══ BOTTOM NAV (mobile only) ══ */
 .bnav{display:none;position:fixed;bottom:0;right:0;left:0;background:var(--bg2);border-top:1px solid var(--brd);z-index:200;height:56px;flex-direction:row;}
 .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;border:none;background:none;font-family:'Heebo',sans-serif;padding:4px 0;position:relative;}
@@ -341,11 +385,15 @@ body.en .tile-badge{left:auto;right:8px;}
   .ib-prim{padding:0 10px;}
   .mo-box{max-width:100%!important;max-height:95vh!important;border-radius:var(--rl) var(--rl) 0 0!important;margin-bottom:0!important;}
   .mo{align-items:flex-end!important;padding:0!important;}
+  .pg div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important;}
+  #appnest-assistant-btn{bottom:66px!important;left:10px!important;padding:8px 14px!important;font-size:14px!important;}
 }
 </style>
 </head>
 <body>
 <div id="toast"></div>
+<div id="lockscr" aria-modal="true" role="dialog"></div>
+<div id="mod-bar"></div>
 <div id="gw"><div class="g-box" id="gb"></div></div>
 
 <div class="app">
@@ -488,27 +536,11 @@ body.en .tile-badge{left:auto;right:8px;}
   </div>
 </div>
 
+<!-- AI SETTINGS -->
+<div class="pg" id="pg-ai"><div style="max-width:620px;" id="ai-wrap"></div></div>
+
 <!-- ABOUT -->
-<div class="pg" id="pg-about">
-  <div style="max-width:460px;">
-    <div class="about-hero">
-      <div class="about-mark">⚖️</div>
-      <div class="about-name">LexCalendar</div>
-      <div class="about-ver" id="ab-ver"></div>
-    </div>
-    <div class="card" style="padding:16px;margin-bottom:10px;">
-      <p id="ab-desc" style="font-size:13px;color:var(--txt2);line-height:1.7;margin-bottom:12px;"></p>
-      <div style="height:1px;background:var(--brd);margin:10px 0;"></div>
-      <div style="font-size:12px;color:var(--txt3);">Developed by <strong style="color:var(--acc);">Barak Aflalo</strong></div>
-      <div style="font-size:12px;color:var(--txt3);margin-top:3px;">© AppNest 2026</div>
-      <a href="https://barakaflalo.github.io/appnest" target="_blank" style="display:inline-block;margin-top:8px;font-size:13px;font-weight:600;color:var(--acc);">🏠 AppNest ›</a>
-    </div>
-    <button class="btn btn-prim btn-sm" onclick="shareApp()" id="ab-share-btn" style="margin-bottom:8px;"></button>
-    <a href="https://barakaflalo.github.io/appnest" target="_blank" class="an">
-      <span class="an-l">🏠 AppNest</span><span class="an-r">More free apps ›</span>
-    </a>
-  </div>
-</div>
+<div class="pg" id="pg-about"><div style="max-width:520px;" id="about-wrap"></div></div>
 
 </div><!-- /main -->
 <nav class="bnav" id="bnav"></nav>
@@ -518,7 +550,7 @@ body.en .tile-badge{left:auto;right:8px;}
 /* ══════════════════════════════════════
    STATE & CONSTANTS
 ══════════════════════════════════════ */
-var APP='lxc2', VER='2.0.0';
+var APP='lxc2', VER='3.0.0';
 var lang='he', theme='default', uname='', uprof='lawyer';
 var a7=true,a3=true,a1=true;
 var alertCfg={
@@ -637,7 +669,7 @@ function openShareWithClient(caseId){
     {he:'תזכורת דיון',en:'Hearing Reminder',fn:function(){ var next=evs[0]; return next?T('תזכורת: ביום '+fmtDate(next.date)+' מתקיים '+next.title+' בתיקך. ','Reminder: On '+fmtDate(next.date)+' there is '+next.title+' in your case. '):''; }}
   ];
   var tplGrid=document.createElement('div'); tplGrid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;';
-  var msgArea=mkTa(T('הודעה','Message')); msgArea.i.rows=5;
+  var msgArea=mkTa(T('הודעה','Message')); msgArea.i.rows=5; msgArea.i.placeholder=T('הודעה ללקוח — כתוב כאן או בקש מהעוזר לנסח','Message to client — type here or ask the assistant');
   templates.forEach(function(tpl){
     var btn=document.createElement('button'); btn.className='btn btn-sm'; btn.textContent=T(tpl.he,tpl.en);
     btn.onclick=function(){ msgArea.i.value=tpl.fn(); };
@@ -776,7 +808,7 @@ var PROCS=[{k:'fast',he:'סדר דין מהיר',en:'Fast Track'},{k:'regular',h
 var COURTS=[{k:'mag_tlv',he:'שלום — תל אביב',en:'Magistrate — TLV'},{k:'mag_jlm',he:'שלום — ירושלים',en:'Magistrate — JLM'},{k:'mag_hfa',he:'שלום — חיפה',en:'Magistrate — HFA'},{k:'dis_tlv',he:'מחוזי — תל אביב',en:'District — TLV'},{k:'dis_jlm',he:'מחוזי — ירושלים',en:'District — JLM'},{k:'dis_cen',he:'מחוזי — מרכז',en:'District — Center'},{k:'supreme',he:'עליון',en:'Supreme'},{k:'labor',he:'בית דין לעבודה',en:'Labor Court'},{k:'notary',he:'נוטריון',en:'Notary'},{k:'enf',he:'הוצאה לפועל',en:'Enforcement'}];
 var EV_TYPES=[{k:'hearing',he:'דיון',en:'Hearing'},{k:'filing',he:'הגשה',en:'Filing'},{k:'deadline',he:'מועד אחרון',en:'Deadline'},{k:'service',he:'המצאה',en:'Service'},{k:'judgment',he:'פסק דין',en:'Judgment'},{k:'other',he:'אחר',en:'Other'}];
 var LOG_TYPES=[{k:'meeting',he:'פגישה',en:'Meeting'},{k:'call',he:'שיחת טלפון',en:'Phone Call'},{k:'email',he:'מייל',en:'Email'},{k:'filing',he:'הגשת מסמך',en:'Document Filing'},{k:'court',he:'דיון בבית משפט',en:'Court Hearing'},{k:'research',he:'מחקר משפטי',en:'Legal Research'},{k:'other',he:'אחר',en:'Other'}];
-var THEMES=[{k:'default',he:'כחול מקצועי',en:'Professional Blue',c:'#1a56db'},{k:'td',he:'כהה',en:'Dark',c:'#4f8ef0'},{k:'tg',he:'ירוק',en:'Green',c:'#059669'},{k:'ts',he:'סגול',en:'Purple',c:'#7c3aed'}];
+var THEMES=[{k:'default',he:'כחול מקצועי',en:'Professional Blue',c:'#1a56db'},{k:'tbg',he:'שחור־זהב',en:'Black & Gold',c:'#C9A84C'},{k:'td',he:'כהה',en:'Dark',c:'#4f8ef0'},{k:'tg',he:'ירוק',en:'Green',c:'#059669'},{k:'ts',he:'סגול',en:'Purple',c:'#7c3aed'}];
 var CASE_STATUS=[{k:'active',he:'פעיל',en:'Active'},{k:'closed',he:'סגור',en:'Closed'},{k:'hold',he:'מושהה',en:'On Hold'},{k:'new',he:'חדש',en:'New'}];
 var PAYMENT_STATUS=[{k:'pending',he:'ממתין',en:'Pending'},{k:'paid',he:'שולם',en:'Paid'},{k:'partial',he:'חלקי',en:'Partial'},{k:'overdue',he:'חוב',en:'Overdue'}];
 
@@ -869,14 +901,14 @@ var LAWS_CATS=[
       {days:30,ref:'חוק בית הדין לעבודה סעיף 33ב',he:'כתב הגנה — בית דין לעבודה',dh:'30 יום מהמצאת כתב התביעה'},
       {days:30,ref:'חוק בית הדין לעבודה',he:'ערעור לבית הדין הארצי לעבודה',dh:'30 יום מיום מתן פסק הדין'},
       {days:15,ref:'תקנות בית הדין לעבודה תקנה 36',he:'תשובה לערעור עבודה',dh:'15 יום ממועד הגשת הערעור'},
-      {days:7,ref:'חוק הגנת השכר סעיף 20',he:'תביעה לתשלום שכר מינימום',dh:'7 שנים מיום ההפרה (התיישנות)'},
-      {days:1825,ref:'חוק עבודת נשים סעיף 26',he:'תביעה בגין פיטורים שלא כדין — נשים',dh:'5 שנים מיום הפיטורים (התיישנות)'},
+      {days:0,ref:'חוק הגנת השכר סעיף 20',he:'תביעה לתשלום שכר מינימום',dh:'7 שנים מיום ההפרה (התיישנות)'},
+      {days:0,ref:'חוק עבודת נשים סעיף 26',he:'תביעה בגין פיטורים שלא כדין — נשים',dh:'5 שנים מיום הפיטורים (התיישנות)'},
       {days:30,ref:'חוק עסקאות גופים ציבוריים',he:'ערר על פיטורים בגוף ציבורי',dh:'30 יום ממועד הפיטורים'},
       {days:60,ref:'חוק פיצויי פיטורים סעיף 29',he:'ערעור על שלילת פיצויי פיטורים',dh:'60 יום ממועד ההחלטה'},
-      {days:7,ref:'חוק שעות עבודה ומנוחה',he:'תלונה על הפרת חוק שעות עבודה',dh:'7 שנים מיום ההפרה (התיישנות)'},
+      {days:0,ref:'חוק שעות עבודה ומנוחה',he:'תלונה על הפרת חוק שעות עבודה',dh:'7 שנים מיום ההפרה (התיישנות)'},
       {days:30,ref:'תקנות בית הדין לעבודה תקנה 45',he:'בקשה לצו מניעה זמני בעבודה',dh:'30 יום מהיוודע'},
       {days:14,ref:'תקנות בית הדין לעבודה תקנה 46',he:'תגובה לצו מניעה זמני בעבודה',dh:'14 יום מקבלת הבקשה'},
-      {days:24,ref:'חוק יישוב סכסוכי עבודה',he:'הודעה על שביתה',dh:'15 יום מראש (שביתה כללית)'},
+      {days:15,ref:'חוק יישוב סכסוכי עבודה',he:'הודעה על שביתה',dh:'15 יום מראש (שביתה כללית)'},
       {days:30,ref:'חוק הסכמים קיבוציים סעיף 14',he:'ערעור על הסכם קיבוצי',dh:'30 יום מהפרסום ברשומות'},
       {days:14,ref:'תקנות עובדים זרים',he:'ערר על דחיית היתר לעובד זר',dh:'14 יום ממועד הדחייה'},
       {days:30,ref:'חוק עבודת נוער סעיף 27',he:'ערעור על החלטת מפקח עבודה',dh:'30 יום ממתן ההחלטה'}
@@ -981,11 +1013,11 @@ var LAWS_CATS=[
   {
     id:'commercial',icon:'💼',he:'מסחרי וחוזים',en:'Commercial & Contracts',
     items:[
-      {days:7,ref:'חוק החוזים סעיף 20',he:'ביטול חוזה בשל פגם בכריתה',dh:'7 שנים מיום גילוי הפגם (התיישנות)'},
+      {days:0,ref:'חוק החוזים סעיף 20',he:'ביטול חוזה בשל פגם בכריתה',dh:'7 שנים מיום גילוי הפגם (התיישנות)'},
       {days:30,ref:'חוק החוזים (תרופות) סעיף 8',he:'הודעת ביטול חוזה',dh:'30 יום מהפרה יסודית'},
       {days:7,ref:'חוק המכר סעיף 14',he:'הודעת אי-התאמה במכר',dh:'7 ימים מיום גילוי אי-ההתאמה'},
       {days:30,ref:'חוק שומרים',he:'תביעת נזק לנכס שנמסר לשמירה',dh:'30 יום מהיוודע הנזק'},
-      {days:30,ref:'פקודת השטרות',he:'הגשת תביעה על שטר',dh:'6 שנים מיום פירעון השטר (התיישנות)'},
+      {days:0,ref:'פקודת השטרות',he:'הגשת תביעה על שטר',dh:'6 שנים מיום פירעון השטר (התיישנות)'},
       {days:30,ref:'חוק הערבות סעיף 6',he:'תביעת ערב',dh:'30 יום מדרישת הנושה'},
       {days:14,ref:'חוק הפיקוח על עסקי ביטוח',he:'ערר על דחיית תביעת ביטוח',dh:'14 יום מקבלת ההחלטה'},
       {days:30,ref:'חוק הגנת הצרכן סעיף 31',he:'תביעה צרכנית',dh:'30 יום מהיוודע הנזק'},
@@ -1003,7 +1035,7 @@ var LAWS_CATS=[
       {days:30,ref:'חוק האפוסטיל',he:'אימות מסמך לחו"ל — תוקף',dh:'תלוי במדינת היעד'},
       {days:7,ref:'תקנות הנוטריונים תקנה 12',he:'הגשת פרוטוקול נוטריוני',dh:'7 ימים מהמועד שנקבע'},
       {days:30,ref:'חוק הנוטריונים סעיף 14',he:'תלונה על נוטריון',dh:'30 יום מהיוודע המעשה'},
-      {days:90,ref:'חוק הנוטריונים סעיף 20',he:'שמירת מסמכי נוטריון',dh:'90 שנה מיום העריכה (שמירה)'}
+      {days:0,ref:'חוק הנוטריונים סעיף 20',he:'שמירת מסמכי נוטריון',dh:'90 שנה מיום העריכה (שמירה)'}
     ]
   },
   {
@@ -1078,8 +1110,9 @@ function loadCfg(){
 }
 function saveCfg(){ try{ localStorage.setItem(APP+'_cfg',JSON.stringify({lang:lang,theme:theme,uname:uname,uprof:uprof,a7:a7,a3:a3,a1:a1,uiLayout:uiLayout})); }catch(x){} }
 function applyTheme(){
-  var cls=(theme==='default'?'':theme)+(lang==='en'?' en':'')+(uiLayout===2?' layout2':'')+(uiLayout===3?' layout3':'');
+  var cls=(theme==='default'?'':theme)+(lang==='en'?' en':'')+(uiLayout===2?' layout2':'')+(uiLayout===3?' layout3':'')+(typeof aiConnected==='function'&&aiConnected()?' ai-on':'');
   document.body.className=cls;
+  var tc=document.querySelector('meta[name="theme-color"]'); if(tc) tc.setAttribute('content',theme==='tbg'?'#0b0b0f':'#0d1f3c');
 }
 function toast(msg,dur){ var e=document.getElementById('toast'); e.textContent=msg; e.style.display='block'; setTimeout(function(){ e.style.display='none'; },dur||2500); }
 function uid(){ return Math.random().toString(36).slice(2,9)+Date.now().toString(36); }
@@ -1212,7 +1245,8 @@ var PG_TITLES={
   'pg-calc':['מחשבון שכר טרחה','Fee Calculator'],
   'pg-set':['הגדרות','Settings'],
   'pg-design':['עיצוב','Design'],
-  'pg-about':['אודות','About']
+  'pg-about':['אודות','About'],
+  'pg-ai':['חיבור בינה (AI)','AI Connection']
 };
 
 function go(pg){
@@ -1244,6 +1278,8 @@ function onGo(pg){
   if(pg==='pg-calc') renderCalc();
   if(pg==='pg-set') renderSettings();
   if(pg==='pg-design') renderDesign();
+  if(pg==='pg-ai') renderAiPage();
+  if(pg==='pg-about') renderAbout();
   applyLbls();
 }
 function toggleLang(){
@@ -1314,6 +1350,7 @@ function openMoreMenu(){
     {icon:'📊',he:'דוחות',en:'Reports',pg:'pg-rep'},
     {icon:'🧮',he:'מחשבון שכר',en:'Fee Calc',pg:'pg-calc'},
     {icon:'⚙️',he:'הגדרות',en:'Settings',pg:'pg-set'},
+    {icon:'🤖',he:'חיבור בינה',en:'AI Connection',pg:'pg-ai'},
     {icon:'ℹ️',he:'אודות',en:'About',pg:'pg-about'}
   ];
   MORE.forEach(function(it){
@@ -1843,7 +1880,9 @@ function openCaseDetail(caseId){
     var docsGrid=document.createElement('div'); docsGrid.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;';
     docs.forEach(function(doc){
       var docCard=document.createElement('div'); docCard.style.cssText='background:var(--bg3);border:1px solid var(--brd);border-radius:var(--r);overflow:hidden;position:relative;cursor:pointer;';
-      var img=document.createElement('img'); img.src=doc.thumb||doc.data; img.style.cssText='width:100%;height:70px;object-fit:cover;display:block;';
+      var img;
+      if(doc.thumb||(doc.data&&doc.data.indexOf('data:image')===0)){ img=document.createElement('img'); img.src=doc.thumb||doc.data; img.style.cssText='width:100%;height:70px;object-fit:cover;display:block;'; }
+      else { img=document.createElement('div'); img.style.cssText='width:100%;height:70px;display:flex;align-items:center;justify-content:center;font-size:30px;'; img.textContent='📄'; }
       img.onclick=function(){ openDocViewer(doc,d,caseId); };
       var docName=document.createElement('div'); docName.style.cssText='font-size:10px;color:var(--txt2);padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'; docName.textContent=doc.name||T('מסמך','Document');
       docCard.appendChild(img); docCard.appendChild(docName); docsGrid.appendChild(docCard);
@@ -1917,7 +1956,7 @@ function calcAutoDeadlines(d,c){
   else if(proc==='appeal'){ items.push({t:T('הגשת ערעור','File Appeal'),dt:addDays(svc,45),ref:'תקנה 400'}); }
   else if(proc==='small'){ items.push({t:T('הגשת תגובה','File Response'),dt:addDays(svc,14),ref:'תקנות תביעות קטנות'}); }
   else if(proc==='labor'){ items.push({t:T('הגשת כתב הגנה','File Defense'),dt:addDays(svc,30),ref:'חוק בית הדין לעבודה'}); }
-  items.forEach(function(it){ d.events.push({id:uid(),caseId:c.id,title:it.t,date:it.dt,ref:it.ref,type:'deadline',auto:true,created:today()}); });
+  items.forEach(function(it){ d.events.push({id:uid(),caseId:c.id,title:it.t,date:it.dt,ref:it.ref,type:'deadline',auto:true,notes:T('חושב אוטומטית — יש לאמת מול התקנות ומול החלטות בית המשפט','Auto-calculated — verify against the rules and court decisions'),created:today()}); });
 }
 
 function openEditCase(caseId){
@@ -2380,6 +2419,9 @@ function renderHoursList(){
 function renderLaws(){
   var pg=document.getElementById('pg-laws'); pg.innerHTML='';
   var total=LAWS_CATS.reduce(function(s,c){ return s+c.items.length; },0);
+  var vb=document.createElement('div'); vb.className='warn-box';
+  vb.textContent=T('⚠️ מאגר עזר — לאימות. המועדים נאספו לנוחות בלבד ואינם ייעוץ משפטי. לפני הסתמכות — יש לאמת מול נוסח התקנות/החוק העדכני, מול החלטות בית המשפט בתיק, ולשים לב לימי פגרה ולאופן מניין הימים.','⚠️ Reference only — verify. Deadlines are provided for convenience and are not legal advice. Always verify against the current rules/statute, court decisions in the case, recess periods and day-counting rules.');
+  pg.appendChild(vb);
   var searchWrap=document.createElement('div'); searchWrap.style.cssText='position:relative;margin-bottom:14px;';
   var searchIcon=document.createElement('span'); searchIcon.style.cssText='position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--txt3);pointer-events:none;';
   searchIcon.textContent='🔍';
@@ -2577,14 +2619,18 @@ function openAddDoc(caseId,parentOv,parentBx){
   var sv=document.createElement('button'); sv.className='btn btn-prim'; sv.textContent=T('✓ שמור בתיק','✓ Save to Case');
   sv.onclick=function(){
     if(!selectedData){ toast(T('בחר קובץ קודם','Choose file first')); return; }
-    var d=getData(); if(!d.docs) d.docs=[];
-    d.docs.push({id:uid(),caseId:caseId,name:fName.i.value.trim()||selectedName||T('מסמך','Document'),date:fDate.i.value,notes:fNotes.i.value.trim(),data:selectedData,thumb:selectedThumb,created:today()});
-    if(saveData(d)){
-      document.body.removeChild(ov);
-      toast(T('מסמך נשמר!','Document saved!'));
-      if(parentOv&&document.body.contains(parentOv)) document.body.removeChild(parentOv);
-      openCaseDetail(caseId);
-    }
+    sv.disabled=true;
+    var docObj={id:uid(),caseId:caseId,name:fName.i.value.trim()||selectedName||T('מסמך','Document'),date:fDate.i.value,notes:fNotes.i.value.trim(),thumb:selectedThumb,created:today()};
+    storeDocMedia(docObj,selectedData).then(function(){
+      var d=getData(); if(!d.docs) d.docs=[];
+      d.docs.push(docObj);
+      if(saveData(d)){
+        document.body.removeChild(ov);
+        toast(T('מסמך נשמר!','Document saved!'));
+        if(parentOv&&document.body.contains(parentOv)) document.body.removeChild(parentOv);
+        openCaseDetail(caseId);
+      } else { sv.disabled=false; }
+    });
   };
 
   var cl=document.createElement('button'); cl.className='btn'; cl.textContent=T('ביטול','Cancel'); cl.onclick=function(){ document.body.removeChild(ov); };
@@ -2602,7 +2648,7 @@ function compressImage(dataUrl,maxPx,quality,callback){
     var canvas=document.createElement('canvas'); canvas.width=cw; canvas.height=ch;
     var ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,cw,ch);
     var compressed=canvas.toDataURL('image/jpeg',quality);
-    var tw=Math.round(cw*0.3); var th=Math.round(ch*0.3);
+    var ts=Math.min(1,180/Math.max(cw,ch)); var tw=Math.round(cw*ts); var th=Math.round(ch*ts);
     var tCanvas=document.createElement('canvas'); tCanvas.width=tw; tCanvas.height=th;
     var tCtx=tCanvas.getContext('2d'); tCtx.drawImage(img,0,0,tw,th);
     var thumb=tCanvas.toDataURL('image/jpeg',0.5);
@@ -2615,31 +2661,39 @@ function openDocViewer(doc,d,caseId){
   var ov=mkOv(); var bx=mkBx();
   bx.appendChild(mkMoHd(doc.name||T('מסמך','Document'),ov));
   var body=document.createElement('div'); body.className='mo-body';
-  if(doc.data&&doc.data.startsWith('data:image')){
-    var img=document.createElement('img'); img.src=doc.data; img.style.cssText='width:100%;border-radius:var(--r);margin-bottom:12px;';
-    body.appendChild(img);
-  } else if(doc.data&&doc.data.startsWith('data:application/pdf')){
-    var pdfLink=document.createElement('a'); pdfLink.href=doc.data; pdfLink.target='_blank'; pdfLink.className='btn btn-full';
-    pdfLink.style.textDecoration='none'; pdfLink.style.display='flex'; pdfLink.textContent=T('📄 פתח PDF','📄 Open PDF');
-    body.appendChild(pdfLink);
-  }
+  var holder=document.createElement('div'); holder.style.cssText='min-height:60px;margin-bottom:12px;text-align:center;color:var(--txt3);font-size:12px;'; holder.textContent=T('טוען…','Loading…');
+  body.appendChild(holder);
+  var objUrl=null, blobRef=null;
+  getDocBlob(doc).then(function(blob){
+    holder.textContent='';
+    if(!blob){ holder.textContent=T('הקובץ לא נמצא באחסון','File not found in storage'); return; }
+    blobRef=blob; objUrl=URL.createObjectURL(blob);
+    if((blob.type||'').indexOf('image')===0){
+      var img=document.createElement('img'); img.src=objUrl; img.style.cssText='width:100%;border-radius:var(--r);'; holder.appendChild(img);
+    } else {
+      var pdfBtn=document.createElement('button'); pdfBtn.className='btn btn-full'; pdfBtn.textContent=T('📄 פתח קובץ','📄 Open file');
+      pdfBtn.onclick=function(){ window.open(objUrl,'_blank'); }; holder.appendChild(pdfBtn);
+    }
+  });
   var info=document.createElement('div'); info.style.cssText='background:var(--bg3);border-radius:var(--r);padding:10px 12px;font-size:12px;color:var(--txt2);';
   if(doc.date){ var dl=document.createElement('div'); dl.textContent=T('תאריך: ','Date: ')+fmtDate(doc.date); info.appendChild(dl); }
   if(doc.notes){ var nl=document.createElement('div'); nl.textContent=T('הערות: ','Notes: ')+doc.notes; nl.style.marginTop='4px'; info.appendChild(nl); }
   body.appendChild(info); bx.appendChild(body);
+  function closeV(){ if(objUrl) URL.revokeObjectURL(objUrl); if(document.body.contains(ov)) document.body.removeChild(ov); }
   var ft=document.createElement('div'); ft.className='mo-foot';
   var saveBtn=document.createElement('button'); saveBtn.className='btn'; saveBtn.textContent=T('💾 שמור למכשיר','💾 Save to Device');
-  saveBtn.onclick=function(){ var a=document.createElement('a'); a.href=doc.data; a.download=doc.name||T('מסמך','document'); a.click(); toast(T('נשמר','Saved')); };
+  saveBtn.onclick=function(){ if(!objUrl) return; var ext=((blobRef&&blobRef.type)||'').indexOf('pdf')>-1?'.pdf':'.jpg'; var a=document.createElement('a'); a.href=objUrl; a.download=(doc.name||T('מסמך','document')).replace(/\.[a-z0-9]+$/i,'')+ext; a.click(); toast(T('נשמר בהורדות','Saved to downloads')); };
   var delBtn=document.createElement('button'); delBtn.className='btn btn-red'; delBtn.textContent=T('🗑 מחק','🗑 Delete');
   delBtn.onclick=function(){
-    if(!confirm(T('למחוק מסמך זה?','Delete this document?'))) return;
-    d.docs=d.docs.filter(function(x){ return x.id!==doc.id; });
-    saveData(d); document.body.removeChild(ov); toast(T('נמחק','Deleted'));
+    if(!confirm(T('למחוק מסמך זה מהאפליקציה? (עותק שכבר נשמר בהורדות לא יימחק)','Delete this document from the app? (a copy already saved to downloads is not affected)'))) return;
+    var d2=getData(); d2.docs=(d2.docs||[]).filter(function(x){ return x.id!==doc.id; });
+    if(doc.mediaId) idbDel('media',doc.mediaId);
+    saveData(d2); closeV(); toast(T('נמחק','Deleted'));
     openCaseDetail(caseId);
   };
-  var cl=document.createElement('button'); cl.className='btn'; cl.textContent=T('סגור','Close'); cl.onclick=function(){ document.body.removeChild(ov); };
+  var cl=document.createElement('button'); cl.className='btn'; cl.textContent=T('סגור','Close'); cl.onclick=closeV;
   ft.appendChild(saveBtn); ft.appendChild(delBtn); ft.appendChild(cl); bx.appendChild(ft);
-  ov.appendChild(bx); ov.onclick=function(e){ if(e.target===ov) document.body.removeChild(ov); };
+  ov.appendChild(bx); ov.onclick=function(e){ if(e.target===ov) closeV(); };
   document.body.appendChild(ov);
 }
 
@@ -2791,8 +2845,12 @@ function renderSettings(){
    {icon:'🎨',l:T('עיצוב','Design'),v:'',a:function(){ go('pg-design'); }},
    {icon:'📅',l:T('Google Calendar','Google Calendar'),v:gcalToken?T('מחובר ✅','Connected ✅'):T('לא מחובר','Not connected'),a:function(){ openGcalModal(); }},
    {icon:'📋',l:T('מדריך','Guide'),v:'',a:showGuide},
+   {icon:'🤖',l:T('חיבור בינה (AI)','AI Connection'),v:aiConnected()?T('מחובר ✅','Connected ✅'):T('לא מחובר','Not connected'),a:function(){ go('pg-ai'); }},
+   {icon:'🔒',l:T('נעילת קוד (PIN)','PIN Lock'),v:pinCfg().hash?T('פעילה ✅','On ✅'):T('כבויה','Off'),a:openPinSettings},
    {icon:'💾',l:T('גיבוי','Backup'),v:'',a:doBackup},
    {icon:'📂',l:T('שחזור','Restore'),v:'',a:doRestore},
+   {icon:'🩺',l:T('דוח אבחון','Diagnostics'),v:'',a:openDiagnostics},
+   {icon:'🛡️',l:T('מדיניות פרטיות','Privacy Policy'),v:'',a:function(){ window.open('privacy_policy.html','_blank'); }},
    {icon:'ℹ️',l:T('אודות','About'),v:'',a:function(){ go('pg-about'); }}
   ].forEach(function(r){
     var row=document.createElement('div'); row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--brd);cursor:pointer;transition:background 0.1s;';
@@ -2832,33 +2890,64 @@ function renderSettings(){
 }
 
 function doBackup(){
-  var blob=new Blob([JSON.stringify({ver:VER,date:today(),uname:uname,data:getData()})],{type:'application/json'});
-  var url=URL.createObjectURL(blob); var a=document.createElement('a');
-  a.href=url; a.download='LexCalendar_backup_'+today()+'.json'; a.click(); URL.revokeObjectURL(url);
-  toast(T('גיבוי הורד','Backup downloaded'));
+  toast(T('מכין גיבוי…','Preparing backup…'));
+  var d=JSON.parse(JSON.stringify(getData()));
+  var docs=d.docs||[];
+  Promise.all(docs.map(function(doc){
+    if(!doc.mediaId) return Promise.resolve();
+    return idbGet('media',doc.mediaId).then(function(b){ return b?blobToDataUrl(b):null; }).then(function(u){ if(u) doc.data=u; delete doc.mediaId; });
+  })).then(function(){
+    var blob=new Blob([JSON.stringify({app:'LexCalendar',ver:VER,date:today(),uname:uname,note:'safe backup — AI keys and PIN are never included',data:d})],{type:'application/json'});
+    var url=URL.createObjectURL(blob); var a=document.createElement('a');
+    a.href=url; a.download='LexCalendar_backup_'+(uname?uname.replace(/[^\w\u0590-\u05FF-]+/g,'_')+'_':'')+today()+'.json'; a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); },4000);
+    toast(T('גיבוי הורד ✓ (ללא מפתח AI וללא קוד נעילה)','Backup downloaded ✓ (no AI key, no PIN)'),3500);
+  }).catch(function(){ toast(T('שגיאה ביצירת הגיבוי','Backup failed')); });
 }
 function doRestore(){
-  var inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
+  var inp=document.createElement('input'); inp.type='file'; inp.accept='.json,application/json';
   inp.onchange=function(){
     var f=inp.files[0]; if(!f) return;
     var r=new FileReader();
     r.onload=function(e){
-      try{ var o=JSON.parse(e.target.result); saveData(o.data||o); if(o.uname){ uname=o.uname; saveCfg(); } toast(T('שוחזר!','Restored!')); renderDash(); }
-      catch(x){ toast(T('קובץ לא תקין','Invalid file')); }
+      var o; try{ o=JSON.parse(e.target.result); }catch(x){ toast(T('קובץ לא תקין','Invalid file')); return; }
+      var data=o.data||o;
+      if(!data||!data.cases||!data.clients){ toast(T('זה לא קובץ גיבוי של LexCalendar','Not a LexCalendar backup')); return; }
+      if(!confirm(T('השחזור יחליף את כל הנתונים הקיימים באפליקציה. להמשיך?','Restore will replace ALL current data. Continue?'))) return;
+      var docs=data.docs||[];
+      Promise.all(docs.map(function(doc){
+        if(!doc.data) return Promise.resolve();
+        return storeDocMedia(doc,doc.data);
+      })).then(function(){
+        if(saveData(data)){ if(o.uname){ uname=o.uname; saveCfg(); } toast(T('שוחזר בהצלחה ✓','Restored ✓')); go('pg-dash'); }
+      });
     };
     r.readAsText(f);
   };
   inp.click();
 }
+function factoryReset(){
+  try{
+    var ks=[]; for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k&&(k.indexOf(APP)===0||k.indexOf('appnest_asst_hist_LexCalendar')===0)) ks.push(k); }
+    ks.forEach(function(k){ localStorage.removeItem(k); });
+  }catch(x){}
+  if(DB){ try{ DB.close(); }catch(x){} }
+  var done=function(){ location.reload(); };
+  try{ var r=indexedDB.deleteDatabase('lexcalendar'); r.onsuccess=done; r.onerror=done; r.onblocked=done; }catch(x){ done(); }
+}
 function confirmDelAll(){
   var ov=mkOv(); var bx=mkBx();
   bx.appendChild(mkMoHd(T('מחיקת כל הנתונים','Delete All Data'),ov));
   var body=document.createElement('div'); body.className='mo-body';
-  var p=document.createElement('p'); p.style.cssText='font-size:13px;color:var(--txt2);margin-bottom:16px;';
-  p.textContent=T('פעולה זו תמחק את כל הלקוחות, התיקים, המועדים, הלוג והשעות. לא ניתן לשחזר.','This will permanently delete all clients, cases, deadlines, logs and hours.');
+  var p=document.createElement('p'); p.style.cssText='font-size:13px;color:var(--txt2);margin-bottom:12px;line-height:1.7;';
+  p.textContent=T('פעולה זו תמחק הכל: לקוחות, תיקים, מועדים, לוג, שעות, מסמכים, הגדרות, מפתח ה-AI וקוד הנעילה — ותחזיר את האפליקציה למצב התקנה ראשונה. מומלץ לגבות קודם.','This deletes everything: clients, cases, deadlines, logs, hours, documents, settings, AI key and PIN — back to a fresh install. Back up first.');
+  var bk=document.createElement('button'); bk.className='btn btn-full'; bk.style.marginBottom='8px'; bk.textContent=T('💾 גבה קודם','💾 Back up first'); bk.onclick=doBackup;
   var del=document.createElement('button'); del.className='btn btn-red btn-full'; del.textContent=T('מחק הכל לצמיתות','Delete Everything');
-  del.onclick=function(){ saveData({clients:[],cases:[],events:[],logs:[],hours:[],docs:[]}); document.body.removeChild(ov); toast(T('נמחק הכל','All deleted')); renderDash(); };
-  body.appendChild(p); body.appendChild(del); bx.appendChild(body);
+  del.onclick=function(){
+    if(!confirm(T('אישור אחרון: למחוק את כל הנתונים לצמיתות? לא ניתן לבטל.','Final confirmation: permanently delete everything? This cannot be undone.'))) return;
+    factoryReset();
+  };
+  body.appendChild(p); body.appendChild(bk); body.appendChild(del); bx.appendChild(body);
   var ft=document.createElement('div'); ft.className='mo-foot';
   var cl=document.createElement('button'); cl.className='btn'; cl.textContent=T('ביטול','Cancel'); cl.onclick=function(){ document.body.removeChild(ov); };
   ft.appendChild(cl); bx.appendChild(ft);
@@ -2952,10 +3041,15 @@ function copyAndToast(text){
 }
 
 function openAI(presetQuestion){
+  if(aiConnected()&&openAssistant(presetQuestion)) return;
   var ov=mkOv(); var bx=mkBx();
   bx.style.maxWidth='560px';
   bx.appendChild(mkMoHd(T('🤖 שאל AI','🤖 Ask AI'),ov));
   var body=document.createElement('div'); body.className='mo-body';
+  var proBar=document.createElement('button'); proBar.className='btn btn-full'; proBar.style.cssText='margin-bottom:12px;border-color:var(--acc);color:var(--acc);font-weight:700;';
+  proBar.textContent=T('⚡ רוצה עוזר AI מובנה בתוך האפליקציה? חבר מפתח ›','⚡ Want a built-in AI assistant? Connect a key ›');
+  proBar.onclick=function(){ document.body.removeChild(ov); go('pg-ai'); };
+  body.appendChild(proBar);
 
   var hero=document.createElement('div');
   hero.style.cssText='background:linear-gradient(135deg,#667eea22,#764ba222);border:1px solid #764ba244;border-radius:var(--rl);padding:14px 16px;margin-bottom:16px;';
@@ -3146,6 +3240,8 @@ var GSTEPS=[
   {icon:'📋',ht:'לוג פעולות ושעות',et:'Activity Log & Hours',hd:'תעד פגישות, שיחות, הגשות. מעקב שעות עבודה ושכר טרחה לכל תיק.',ed:'Log meetings, calls, filings. Track work hours and fees per case.'},
   {icon:'🧮',ht:'מחשבון שכר טרחה',et:'Fee Calculator',hd:'חשב שכר טרחה לפי תעריפי לשכת עורכי הדין — אחוז מהתביעה, תעריף שעתי, או שיטה משולבת.',ed:'Calculate fees per Bar Association rates — percentage, hourly, or combined.'},
   {icon:'📅',ht:'חיבור Google Calendar',et:'Google Calendar Sync',hd:'חבר את חשבון Google שלך וכל המועדים מתווספים אוטומטית ליומן שלך עם תזכורות.',ed:'Connect your Google account and all deadlines sync to your calendar with reminders.'},
+  {icon:'🪄',ht:'עוזר AI',et:'AI Assistant',hd:'כפתור 🤖 AI שולח שאלה לאפליקציית ה-AI שלך בחינם. בהגדרות ← חיבור בינה אפשר לחבר מפתח משלך ולקבל עוזר מובנה שעונה, מנווט, פותח טפסים ומנסח הודעות ללקוח.',ed:'The 🤖 AI button sends questions to your own AI app for free. In Settings → AI Connection you can add your own key for a built-in assistant.'},
+  {icon:'🔒',ht:'פרטיות וחיסיון',et:'Privacy',hd:'הכל נשמר על המכשיר בלבד. מומלץ להפעיל נעילת קוד (PIN) בהגדרות ולגבות מדי פעם. חשוב: המועדים הם כלי עזר — תמיד לאמת מול התקנות והחלטות בית המשפט.',ed:'Everything stays on your device. Enable a PIN in Settings and back up regularly. Deadlines are an aid — always verify.'},
   {icon:'🚀',ht:'מוכן להתחיל!',et:"Let's Go!",hd:'לחץ "+ תיק חדש" כדי להתחיל. כל הנתונים שמורים על המכשיר שלך בלבד — פרטיות מלאה. חינם לצמיתות.',ed:'Click "+ New Case" to start. All data stored only on your device — full privacy. Free forever.'}
 ];
 function showGuide(){ gStep=0; document.getElementById('gw').classList.add('on'); renderGStep(); }
@@ -3203,18 +3299,500 @@ function mkSel(lbl,opts){ var w=document.createElement('div'); w.className='fg';
 function mkTa(lbl){ var w=document.createElement('div'); w.className='fg'; var l=document.createElement('label'); l.className='fl'; l.textContent=lbl; var i=document.createElement('textarea'); i.rows=2; w.appendChild(l); w.appendChild(i); return {w:w,i:i}; }
 
 /* ══════════════════════════════════════
+   STORAGE — IndexedDB למדיה + מפתחות (נפילה ל-localStorage)
+══════════════════════════════════════ */
+var DB=null;
+function idbOpen(){
+  return new Promise(function(res){
+    if(!window.indexedDB){ res(null); return; }
+    try{
+      var r=indexedDB.open('lexcalendar',1);
+      r.onupgradeneeded=function(){ var db=r.result; if(!db.objectStoreNames.contains('media')) db.createObjectStore('media'); if(!db.objectStoreNames.contains('secrets')) db.createObjectStore('secrets'); };
+      r.onsuccess=function(){ DB=r.result; res(DB); };
+      r.onerror=function(){ res(null); }; r.onblocked=function(){ res(null); };
+    }catch(x){ res(null); }
+  });
+}
+function idbPut(store,key,val){
+  return new Promise(function(res,rej){
+    if(!DB){ rej(new Error('NO_IDB')); return; }
+    try{ var tx=DB.transaction(store,'readwrite'); tx.objectStore(store).put(val,key); tx.oncomplete=function(){ res(true); }; tx.onerror=function(){ rej(tx.error); }; tx.onabort=function(){ rej(tx.error); }; }catch(x){ rej(x); }
+  });
+}
+function idbGet(store,key){
+  return new Promise(function(res){
+    if(!DB){ res(null); return; }
+    try{ var r=DB.transaction(store,'readonly').objectStore(store).get(key); r.onsuccess=function(){ res(r.result||null); }; r.onerror=function(){ res(null); }; }catch(x){ res(null); }
+  });
+}
+function idbDel(store,key){
+  return new Promise(function(res){
+    if(!DB){ res(false); return; }
+    try{ var tx=DB.transaction(store,'readwrite'); tx.objectStore(store).delete(key); tx.oncomplete=function(){ res(true); }; tx.onerror=function(){ res(false); }; }catch(x){ res(false); }
+  });
+}
+function dataUrlToBlob(u){ return fetch(u).then(function(r){ return r.blob(); }); }
+function blobToDataUrl(b){ return new Promise(function(res,rej){ var fr=new FileReader(); fr.onload=function(){ res(fr.result); }; fr.onerror=rej; fr.readAsDataURL(b); }); }
+/* שומר את קובץ המסמך: ב-IndexedDB כ-Blob (המסמך מחזיק רק הפניה). אם אין IndexedDB — נשאר בתוך המסמך */
+function storeDocMedia(doc,dataUrl){
+  if(!DB){ doc.data=dataUrl; toast(T('⚠️ האחסון המתקדם לא זמין — המסמך נשמר באחסון מוגבל','⚠️ Advanced storage unavailable — saved to limited storage'),3500); return Promise.resolve(); }
+  return dataUrlToBlob(dataUrl).then(function(b){
+    return idbPut('media',doc.id,b).then(function(){ return idbGet('media',doc.id); }).then(function(chk){
+      if(chk){ doc.mediaId=doc.id; delete doc.data; } else { doc.data=dataUrl; }
+    });
+  }).catch(function(){ doc.data=dataUrl; });
+}
+function getDocBlob(doc){
+  if(doc.mediaId) return idbGet('media',doc.mediaId).then(function(b){ return b||(doc.data?dataUrlToBlob(doc.data):null); });
+  if(doc.data) return dataUrlToBlob(doc.data).catch(function(){ return null; });
+  return Promise.resolve(null);
+}
+/* העברה בטוחה: מסמכים ישנים (base64 בתוך localStorage) → Blob ב-IndexedDB. מוחקים את הישן רק אחרי אימות */
+function migrateDocs(){
+  if(!DB) return Promise.resolve();
+  var d=getData(); var todo=(d.docs||[]).filter(function(x){ return x.data&&!x.mediaId; });
+  if(!todo.length) return Promise.resolve();
+  return todo.reduce(function(p,doc){
+    return p.then(function(){ var u=doc.data; return storeDocMedia(doc,u); });
+  },Promise.resolve()).then(function(){ saveData(d); });
+}
+var storagePersisted=null;
+function requestPersist(){
+  if(navigator.storage&&navigator.storage.persist){
+    navigator.storage.persisted().then(function(p){ if(p){ storagePersisted=true; return; } return navigator.storage.persist().then(function(ok){ storagePersisted=!!ok; }); }).catch(function(){});
+  }
+}
+
+/* ══════════════════════════════════════
+   CRYPTO — הצפנת מפתח ה-AI (AES-256-GCM, מפתח לא-ניתן-לייצוא)
+══════════════════════════════════════ */
+function b64(buf){ var a=new Uint8Array(buf),s=''; for(var i=0;i<a.length;i++) s+=String.fromCharCode(a[i]); return btoa(s); }
+function unb64(s){ var b=atob(s),a=new Uint8Array(b.length); for(var i=0;i<b.length;i++) a[i]=b.charCodeAt(i); return a.buffer; }
+var cryptoKeyP=null;
+function getCryptoKey(){
+  if(cryptoKeyP) return cryptoKeyP;
+  if(!window.crypto||!crypto.subtle||!DB) return Promise.resolve(null);
+  cryptoKeyP=idbGet('secrets','aesKey').then(function(k){
+    if(k) return k;
+    return crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']).then(function(nk){ return idbPut('secrets','aesKey',nk).then(function(){ return nk; }); });
+  }).catch(function(){ return null; });
+  return cryptoKeyP;
+}
+function encStr(str){
+  if(!str) return Promise.resolve(null);
+  return getCryptoKey().then(function(k){
+    if(!k) return {plain:str};
+    var iv=crypto.getRandomValues(new Uint8Array(12));
+    return crypto.subtle.encrypt({name:'AES-GCM',iv:iv},k,new TextEncoder().encode(str)).then(function(ct){
+      var o={iv:Array.prototype.slice.call(iv),ct:b64(ct)};
+      return decStr(o).then(function(back){ return back===str?o:{plain:str}; });
+    });
+  }).catch(function(){ return {plain:str}; });
+}
+function decStr(o){
+  if(!o) return Promise.resolve('');
+  if(o.plain!=null) return Promise.resolve(o.plain);
+  return getCryptoKey().then(function(k){
+    if(!k) return '';
+    return crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(o.iv)},k,unb64(o.ct)).then(function(b){ return new TextDecoder().decode(b); });
+  }).catch(function(){ return ''; });
+}
+
+/* ══════════════════════════════════════
+   AI — חיבור BYOK (Free = שיתוף לאפליקציה חיצונית · Pro = עוזר מובנה)
+══════════════════════════════════════ */
+var aiCfg={provider:'',shareData:false,customUrl:'',deviceUrl:'http://localhost:11434/v1',enc:{}};
+var aiKeys={gemini:'',claude:'',openai:'',customKey:''};
+var AI_PROVS=[
+  {k:'gemini',n:'Gemini (Google)',tag:'FREE',tc:'var(--gs)',tt:'var(--gt)',keyF:'gemini',
+   steps:['היכנס ל-<a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">aistudio.google.com/app/apikey</a>','התחבר עם חשבון Google','לחץ Create API key','העתק את המפתח והדבק כאן למטה','יש שכבה חינמית — בלי כרטיס אשראי']},
+  {k:'claude',n:'Claude (Anthropic)',tag:'API',tc:'var(--acc-s)',tt:'var(--acc-t)',keyF:'claude',
+   steps:['היכנס ל-<a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>','Settings ← API Keys ← Create Key','העתק את המפתח (מתחיל ב-sk-ant-) והדבק כאן','בתשלום לפי שימוש — שאלה ממוצעת עולה אגורות בודדות']},
+  {k:'openai',n:'ChatGPT (OpenAI)',tag:'API',tc:'var(--acc-s)',tt:'var(--acc-t)',keyF:'openai',
+   steps:['היכנס ל-<a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a>','Create new secret key','העתק (מתחיל ב-sk-) והדבק כאן','בתשלום לפי שימוש']},
+  {k:'device',n:'AI במכשיר (Ollama)',tag:'LOCAL',tc:'var(--ps)',tt:'var(--pt)',keyF:'',
+   steps:['התקן Ollama במחשב והרץ: ollama pull llama3','הפעל עם הרשאת דפדפן: OLLAMA_ORIGINS=* ollama serve','כתובת ברירת מחדל: http://localhost:11434/v1','פרטי לגמרי ובלי עלות — עובד רק במחשב שבו Ollama רץ']},
+  {k:'custom',n:'Endpoint מותאם',tag:'API',tc:'var(--bg3)',tt:'var(--txt2)',keyF:'customKey',
+   steps:['כתובת מלאה תואמת-OpenAI שמסתיימת ב-/chat/completions','מפתח אופציונלי']}
+];
+function loadAiCfg(){ try{ var s=localStorage.getItem(APP+'_ai'); if(s){ var o=JSON.parse(s); for(var k in o) aiCfg[k]=o[k]; if(!aiCfg.enc) aiCfg.enc={}; } }catch(x){} }
+function saveAiCfg(){ try{ localStorage.setItem(APP+'_ai',JSON.stringify(aiCfg)); }catch(x){ toast(T('שגיאת שמירה','Save error')); } }
+function loadAiKeys(){
+  var ks=['gemini','claude','openai','customKey'];
+  return Promise.all(ks.map(function(k){ return decStr(aiCfg.enc[k]).then(function(v){ aiKeys[k]=v||''; }); })).then(updateAiStatus);
+}
+function aiConnected(){
+  var p=aiCfg.provider; if(!p) return false;
+  if(p==='device') return !!aiCfg.deviceUrl;
+  if(p==='custom') return !!aiCfg.customUrl;
+  return !!(aiKeys[p]&&aiKeys[p].trim());
+}
+function updateAiStatus(){ document.body.classList.toggle('ai-on',aiConnected()); }
+function firstCleanKey(s){ var a=(s||'').split(/[\n,;]+/).map(function(x){ return x.trim(); }).filter(Boolean); return a[0]||''; }
+/* בדיקת חיבור = משיכת רשימת המודלים החיה של המפתח (כלל הזהב: לא לסמוך על שם מודל קבוע) */
+function testAiConnection(){
+  var p=aiCfg.provider, req;
+  if(p==='gemini') req=fetch('https://generativelanguage.googleapis.com/v1beta/models?key='+encodeURIComponent(firstCleanKey(aiKeys.gemini))).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(function(j){ return (j.models||[]).filter(function(m){ return (m.supportedGenerationMethods||[]).indexOf('generateContent')>-1; }).length; });
+  else if(p==='claude') req=fetch('https://api.anthropic.com/v1/models',{headers:{'x-api-key':firstCleanKey(aiKeys.claude),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'}}).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(function(j){ return (j.data||[]).length; });
+  else if(p==='openai') req=fetch('https://api.openai.com/v1/models',{headers:{'Authorization':'Bearer '+firstCleanKey(aiKeys.openai)}}).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(function(j){ return (j.data||[]).length; });
+  else if(p==='device') req=fetch(aiCfg.deviceUrl.replace(/\/+$/,'')+'/models').then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(function(j){ return (j.data||j.models||[]).length; });
+  else if(p==='custom'){ var h={'Content-Type':'application/json'}; if(aiKeys.customKey) h.Authorization='Bearer '+firstCleanKey(aiKeys.customKey);
+    req=fetch(aiCfg.customUrl,{method:'POST',headers:h,body:JSON.stringify({model:'gpt-4o-mini',max_tokens:5,messages:[{role:'user',content:'ping'}]})}).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return 1; }); }
+  else return Promise.reject(new Error(T('לא נבחר ספק','No provider selected')));
+  return req;
+}
+function renderAiPage(){
+  var w=document.getElementById('ai-wrap'); if(!w) return; w.innerHTML='';
+  var intro=document.createElement('div'); intro.className='card'; intro.style.padding='16px';
+  var h=document.createElement('div'); h.style.cssText='font-size:15px;font-weight:700;margin-bottom:6px;'; h.textContent=T('🤖 עוזר AI מובנה','🤖 Built-in AI assistant');
+  var p=document.createElement('div'); p.style.cssText='font-size:13px;color:var(--txt2);line-height:1.7;';
+  p.textContent=T('בלי מפתח — כפתור ה-AI שולח שאלה לאפליקציית ה-AI שכבר מותקנת אצלך (חינם). עם מפתח משלך — נפתח עוזר בתוך האפליקציה שעונה, מנווט בין מסכים, פותח טפסים ומנסח הודעות ללקוח. המפתח נשמר מוצפן על המכשיר בלבד, לא עובר דרך שום שרת של AppNest ולא נכלל בגיבוי.','Without a key — the AI button sends your question to an AI app you already have (free). With your own key — an in-app assistant answers, navigates, opens forms and drafts client messages. The key is stored encrypted on this device only and never included in backups.');
+  intro.appendChild(h); intro.appendChild(p); w.appendChild(intro);
+
+  var st=document.createElement('div'); st.style.cssText='margin:12px 0;font-size:13px;font-weight:600;';
+  st.innerHTML=''; st.textContent=aiConnected()?T('🟢 מחובר — ','🟢 Connected — ')+(AI_PROVS.filter(function(x){ return x.k===aiCfg.provider; })[0]||{n:''}).n:T('⚪ לא מחובר (מצב חינמי)','⚪ Not connected (free mode)');
+  w.appendChild(st);
+
+  var sel=aiCfg.provider||'gemini';
+  var list=document.createElement('div');
+  AI_PROVS.forEach(function(pv){
+    var row=document.createElement('div'); row.className='ai-prov'+(sel===pv.k?' on':'');
+    var nm=document.createElement('div'); nm.style.cssText='flex:1;font-size:13px;font-weight:600;'; nm.textContent=pv.n;
+    var tg=document.createElement('span'); tg.className='ai-tag'; tg.style.background=pv.tc; tg.style.color=pv.tt; tg.textContent=pv.tag;
+    row.appendChild(nm); row.appendChild(tg);
+    row.onclick=function(){ pendingProv=pv.k; renderAiForm(pv.k); Array.prototype.forEach.call(list.children,function(c){ c.classList.remove('on'); }); row.classList.add('on'); };
+    list.appendChild(row);
+  });
+  w.appendChild(list);
+  var form=document.createElement('div'); form.id='ai-form'; form.className='card'; form.style.cssText='padding:16px;margin-top:10px;'; w.appendChild(form);
+  var pendingProv=sel;
+  renderAiForm(sel);
+
+  var shareCard=document.createElement('div'); shareCard.className='card'; shareCard.style.cssText='padding:14px 16px;display:flex;gap:12px;align-items:flex-start;';
+  var tog=document.createElement('div'); tog.className='tog'+(aiCfg.shareData?' on':''); var kn=document.createElement('div'); kn.className='tog-k'; tog.appendChild(kn);
+  var tx=document.createElement('div'); tx.style.flex='1';
+  var t1=document.createElement('div'); t1.style.cssText='font-size:13px;font-weight:600;'; t1.textContent=T('שתף נתוני תיקים עם העוזר','Share case data with the assistant');
+  var t2=document.createElement('div'); t2.style.cssText='font-size:12px;color:var(--txt3);margin-top:3px;line-height:1.6;'; t2.textContent=T('כשפעיל — העוזר מקבל את רשימת המועדים הקרובים (כותרת, תאריך ושם התיק) כדי לענות על "מה יש לי השבוע". המידע נשלח לספק ה-AI שבחרת. כשכבוי — רק מספרים כלליים.','When on — the assistant receives upcoming deadlines (title, date, case name) so it can answer "what do I have this week". This is sent to your chosen AI provider. When off — only general counts.');
+  tx.appendChild(t1); tx.appendChild(t2);
+  tog.onclick=function(){ aiCfg.shareData=!aiCfg.shareData; saveAiCfg(); tog.classList.toggle('on',aiCfg.shareData); };
+  shareCard.appendChild(tog); shareCard.appendChild(tx); w.appendChild(shareCard);
+
+  var priv=document.createElement('div'); priv.style.cssText='font-size:11px;color:var(--txt3);line-height:1.7;padding:4px 2px 20px;';
+  priv.textContent=T('🔒 פרטיות: כשאתה שואל את העוזר, השאלה (ומה שבחרת לשתף) נשלחים ישירות לספק שבחרת — Google / Anthropic / OpenAI — לפי תנאי השימוש שלהם. שום דבר לא נשלח כשאין מפתח. תשובות ה-AI אינן ייעוץ משפטי ויש לאמת אותן.','🔒 Privacy: your question (and anything you chose to share) goes directly to the provider you chose. Nothing is sent without a key. AI answers are not legal advice — verify them.');
+  w.appendChild(priv);
+
+  function renderAiForm(pk){
+    var pv=AI_PROVS.filter(function(x){ return x.k===pk; })[0];
+    form.innerHTML='';
+    var steps=document.createElement('div'); steps.className='ai-steps';
+    steps.innerHTML=pv.steps.map(function(x,i){ return (i+1)+'. '+x; }).join('<br>');
+    form.appendChild(steps);
+    var urlF=null, keyF=null;
+    if(pk==='device'||pk==='custom'){
+      urlF=mkFld(pk==='device'?T('כתובת השרת המקומי','Local server URL'):T('כתובת Endpoint','Endpoint URL'),'url');
+      urlF.i.value=pk==='device'?aiCfg.deviceUrl:aiCfg.customUrl; urlF.i.dir='ltr';
+      form.appendChild(urlF.w);
+    }
+    if(pv.keyF){
+      keyF=mkFld(T('מפתח API','API key'),'password'); keyF.i.dir='ltr'; keyF.i.autocomplete='off';
+      keyF.i.value=aiKeys[pv.keyF]||'';
+      var eye=document.createElement('button'); eye.className='btn btn-sm'; eye.style.marginTop='6px'; eye.textContent=T('👁 הצג/הסתר','👁 Show/Hide');
+      eye.onclick=function(){ keyF.i.type=keyF.i.type==='password'?'text':'password'; };
+      keyF.w.appendChild(eye); form.appendChild(keyF.w);
+    }
+    var note=document.createElement('div'); note.style.cssText='font-size:11px;color:var(--txt3);margin:4px 0 12px;';
+    note.textContent=T('המודל נבחר אוטומטית — תמיד העדכני ביותר, עם גיבוי למודל הבא אם אחד הושבת.','The model is picked automatically — always the latest, with fallback if one is retired.');
+    form.appendChild(note);
+    var res=document.createElement('div'); res.style.cssText='font-size:12px;margin-bottom:10px;min-height:16px;';
+    var btns=document.createElement('div'); btns.style.cssText='display:flex;gap:8px;flex-wrap:wrap;';
+    var save=document.createElement('button'); save.className='btn btn-prim'; save.textContent=T('💾 שמור ובדוק חיבור','💾 Save & test');
+    save.onclick=function(){
+      var kv=keyF?keyF.i.value.trim():'';
+      if(pv.keyF&&!kv&&pk!=='custom'){ toast(T('הדבק מפתח קודם','Paste a key first')); return; }
+      if(urlF&&!urlF.i.value.trim()){ toast(T('חסרה כתובת','URL required')); return; }
+      save.disabled=true; res.style.color='var(--txt3)'; res.textContent=T('שומר ומצפין…','Saving & encrypting…');
+      if(pk==='device') aiCfg.deviceUrl=urlF.i.value.trim();
+      if(pk==='custom') aiCfg.customUrl=urlF.i.value.trim();
+      var encP=pv.keyF?encStr(kv):Promise.resolve(null);
+      encP.then(function(enc){
+        if(pv.keyF){ aiCfg.enc[pv.keyF]=enc; aiKeys[pv.keyF]=kv; }
+        aiCfg.provider=pk; saveAiCfg(); updateAiStatus();
+        res.textContent=T('בודק חיבור…','Testing…');
+        return testAiConnection();
+      }).then(function(n){
+        res.style.color='var(--grn)'; res.textContent=T('✅ מחובר! נמצאו '+n+' מודלים זמינים. העוזר 🪄 מוכן.','✅ Connected! '+n+' models available. Assistant 🪄 is ready.');
+        if(enc0()&&enc0().plain!=null) res.textContent+=T(' (הצפנה לא נתמכת בדפדפן הזה — המפתח נשמר ללא הצפנה)',' (encryption unsupported here — key saved unencrypted)');
+      }).catch(function(e){
+        res.style.color='var(--red)'; res.textContent=T('❌ החיבור נכשל: ','❌ Connection failed: ')+(e&&e.message||e)+T(' — בדוק את המפתח ונסה שוב.',' — check the key and retry.');
+      }).then(function(){ save.disabled=false; });
+      function enc0(){ return pv.keyF?aiCfg.enc[pv.keyF]:null; }
+    };
+    var test=document.createElement('button'); test.className='btn'; test.textContent=T('🔌 בדוק חיבור','🔌 Test');
+    test.onclick=function(){ if(aiCfg.provider!==pk){ toast(T('שמור קודם את הספק הזה','Save this provider first')); return; } res.style.color='var(--txt3)'; res.textContent=T('בודק…','Testing…'); testAiConnection().then(function(n){ res.style.color='var(--grn)'; res.textContent=T('✅ תקין — '+n+' מודלים','✅ OK — '+n+' models'); }).catch(function(e){ res.style.color='var(--red)'; res.textContent='❌ '+(e&&e.message||e); }); };
+    var disc=document.createElement('button'); disc.className='btn btn-red'; disc.textContent=T('⛔ נתק','⛔ Disconnect');
+    disc.onclick=function(){ if(!confirm(T('לנתק ולמחוק את המפתח מהמכשיר?','Disconnect and delete the key from this device?'))) return; aiCfg.provider=''; aiCfg.enc={}; aiKeys={gemini:'',claude:'',openai:'',customKey:''}; saveAiCfg(); updateAiStatus(); toast(T('נותק','Disconnected')); renderAiPage(); };
+    btns.appendChild(save); btns.appendChild(test); if(aiConnected()) btns.appendChild(disc);
+    form.appendChild(res); form.appendChild(btns);
+  }
+}
+
+/* ══════════════════════════════════════
+   ASSISTANT BRIDGE — מפה (config) לעוזר AppNest
+══════════════════════════════════════ */
+function findAsstInput(){ var els=document.querySelectorAll('input'); for(var i=0;i<els.length;i++){ if((els[i].placeholder||'').indexOf('שאל אותי משהו')>-1) return els[i]; } return null; }
+function asstPanelOpen(){ var inp=findAsstInput(); var p=inp; while(p&&p!==document.body){ if(p.style&&p.style.position==='fixed') return p.style.display!=='none'; p=p.parentNode; } return false; }
+function openAssistant(q){
+  var b=document.getElementById('appnest-assistant-btn'); if(!b) return false;
+  if(!asstPanelOpen()) b.click();
+  if(q) setTimeout(function(){ var i=findAsstInput(); if(i){ i.value=q; i.focus(); } },120);
+  return true;
+}
+function asstState(){
+  var d=getData(), lines=[];
+  var open=d.cases.filter(function(c){ return c.status!=='closed'; }).length;
+  var wk=d.events.filter(function(ev){ var x=ev.date?daysTo(ev.date):-99; return x>=0&&x<=7; });
+  var over=d.events.filter(function(ev){ return ev.date&&daysTo(ev.date)<0; }).length;
+  var titles=PG_TITLES[curPg]||['',''];
+  lines.push('המסך הפתוח כרגע: '+titles[0]);
+  lines.push('לקוחות: '+d.clients.length+' · תיקים פעילים: '+open+' · מועדים ב-7 הימים הקרובים: '+wk.length+' · מועדים שעברו: '+over);
+  lines.push('היום: '+fmtDate(today()));
+  if(aiCfg.shareData&&wk.length){
+    wk.sort(function(a,b){ return a.date.localeCompare(b.date); });
+    lines.push('המועדים הקרובים:');
+    wk.slice(0,12).forEach(function(ev){ var c=d.cases.find(function(x){ return x.id===ev.caseId; }); lines.push('• '+fmtDate(ev.date)+' — '+ev.title+(c?' (תיק: '+c.name+')':'')+(ev.ref?' ['+ev.ref+']':'')); });
+  } else if(!aiCfg.shareData){
+    lines.push('(המשתמש לא אישר שיתוף פרטי תיקים — אם ישאל על מועדים ספציפיים, הצע לו לפתוח את מסך המועדים, או להפעיל "שתף נתוני תיקים" במסך חיבור הבינה.)');
+  }
+  return lines.join('\n');
+}
+window.APPNEST_ASSISTANT_CONFIG={
+  appName:'LexCalendar',
+  appDescription:'LexCalendar היא מערכת ניהול משפטית לעורכי דין ונוטריונים בישראל: לקוחות, תיקים, מועדים (כולל חישוב מועדים לפי תאריך המצאה), יומן, לוג פעולות, שעות ושכר טרחה, מאגר מועדים לפי חוקים ותקנות, התראות, דוחות, מחשבון שכר טרחה ושיתוף עדכונים עם לקוחות. המשתמש הוא עורך דין — דבר איתו כעמית מקצועי, בקצרה ולעניין. כללים חשובים: (1) אינך נותן ייעוץ משפטי מחייב. כשמדובר במועד, מניין ימים, התיישנות או פרוצדורה — תן את ההבנה הכללית ותמיד הזכר לאמת מול נוסח התקנות/החוק העדכני, ימי פגרה והחלטות בית המשפט בתיק. (2) אל תמציא מספרי תקנות או פסיקה; אם אינך בטוח — אמור זאת. (3) אם מבקשים לפתוח תיק/לקוח/מועד/פעולה — השתמש בפעולה המתאימה שפותחת את הטופס, והמשתמש ימלא ויאשר. (4) אם מבקשים לנסח הודעה ללקוח — אם חלון "שתף עם לקוח" פתוח, כתוב את ההודעה לשדה "הודעה ללקוח"; אחרת כתוב אותה בצ\'אט והצע לפתוח תיק ← "שתף עם לקוח". (5) לעולם אל תמחק מידע.',
+  tabs:[
+    {name:'לוח בקרה',screen:'pg-dash'},{name:'לקוחות',screen:'pg-clients'},{name:'תיקים',screen:'pg-cases'},
+    {name:'מועדים',screen:'pg-dl'},{name:'יומן',screen:'pg-cal'},{name:'לוג פעולות',screen:'pg-log'},
+    {name:'שעות ושכר',screen:'pg-hours'},{name:'חוקי סדר הדין',screen:'pg-laws'},{name:'התראות',screen:'pg-alerts'},
+    {name:'דוחות',screen:'pg-rep'},{name:'מחשבון שכר טרחה',screen:'pg-calc'},{name:'הגדרות',screen:'pg-set'},
+    {name:'עיצוב',screen:'pg-design'},{name:'חיבור בינה',screen:'pg-ai'},{name:'אודות',screen:'pg-about'}
+  ],
+  navigate:function(s){ go(s); },
+  fields:[{name:'הודעה ללקוח',label:'הודעה ללקוח (בחלון שתף עם לקוח)',placeholder:'הודעה ללקוח'}],
+  readAiConfig:function(){
+    if(!aiConnected()) return null;
+    return {provider:aiCfg.provider,keys:{gemini:aiKeys.gemini,claude:aiKeys.claude,openai:aiKeys.openai,customKey:aiKeys.customKey,customUrl:aiCfg.customUrl,deviceUrl:aiCfg.deviceUrl}};
+  },
+  readState:asstState,
+  actions:{
+    'פתח_תיק_חדש':{desc:'פותח את טופס "תיק חדש"',run:function(){ openNewCase(null); },done:'פתחתי טופס תיק חדש — מלא ואשר ✓'},
+    'פתח_לקוח_חדש':{desc:'פותח את טופס "לקוח חדש"',run:function(){ openNewClient(); },done:'פתחתי טופס לקוח חדש ✓'},
+    'הוסף_מועד':{desc:'פותח את טופס הוספת מועד (אירוע ידני או חישוב לפי המצאה)',run:function(){ openNewEvent(null); },done:'פתחתי את טופס המועד ✓'},
+    'תעד_פעולה':{desc:'פותח את טופס תיעוד פעולה/שעות בלוג',run:function(){ openNewLog(null); },done:'פתחתי טופס תיעוד פעולה ✓'},
+    'ייצא_דוח_PDF':{desc:'מפיק דוח PDF של כל המועדים',run:function(){ exportPDF(); },done:'הדוח נפתח להדפסה/שמירה כ-PDF ✓'},
+    'תזכורת_וואטסאפ':{desc:'מכין הודעת WhatsApp עם המועדים של 7 הימים הקרובים (למשתמש עצמו)',run:function(){ sendWhatsAppReminder(); },done:'פתחתי את וואטסאפ עם התזכורת ✓'}
+  },
+  suggestions:['מה יש לי השבוע?','איך מחשבים מועד לפי תאריך המצאה?','פתח לי תיק חדש','נסח לי הודעת עדכון ללקוח']
+};
+function checkAssistantLoaded(){
+  setTimeout(function(){
+    if(document.getElementById('appnest-assistant-btn')) return;
+    if(!aiConnected()) return;
+    var bar=document.getElementById('mod-bar'); if(!bar) return;
+    bar.textContent=T('⚠️ העדכון לא נטען במלואו (העוזר חסר) — לחץ כאן לרענון','⚠️ Update not fully loaded (assistant missing) — tap to refresh');
+    bar.style.display='block';
+    bar.onclick=hardRefresh;
+  },2500);
+}
+function hardRefresh(){
+  var go2=function(){ location.reload(); };
+  if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){
+    navigator.serviceWorker.getRegistrations().then(function(rs){ return Promise.all(rs.map(function(r){ return r.unregister(); })); }).then(function(){ if(window.caches) return caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); }); }).then(go2,go2);
+  } else go2();
+}
+
+/* ══════════════════════════════════════
+   PIN LOCK + מסך פרטיות
+══════════════════════════════════════ */
+function pinCfg(){ try{ return JSON.parse(localStorage.getItem(APP+'_pin')||'{}'); }catch(x){ return {}; } }
+function savePinCfg(o){ try{ localStorage.setItem(APP+'_pin',JSON.stringify(o)); }catch(x){} }
+function hashPin(pin){
+  var s='lxc2-pin:'+pin;
+  if(window.crypto&&crypto.subtle) return crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)).then(function(b){ return b64(b); });
+  var h=5381; for(var i=0;i<s.length;i++){ h=((h<<5)+h+s.charCodeAt(i))|0; } return Promise.resolve('d'+h);
+}
+var lockFails=0, lockUntil=0, hiddenAt=0;
+function showLock(){
+  var pc=pinCfg(); if(!pc.hash) return;
+  var L=document.getElementById('lockscr'); L.innerHTML=''; L.classList.add('on');
+  var mark=document.createElement('div'); mark.className='lk-mark'; mark.textContent='⚖️';
+  var tt=document.createElement('div'); tt.className='lk-title'; tt.textContent=T('LexCalendar נעולה','LexCalendar is locked');
+  var sub=document.createElement('div'); sub.className='lk-sub'; sub.textContent=T('הזן קוד','Enter PIN');
+  var dots=document.createElement('div'); dots.className='lk-dots';
+  var len=pc.len||4, entry='';
+  for(var i=0;i<len;i++){ var dt=document.createElement('div'); dt.className='lk-dot'; dots.appendChild(dt); }
+  function paint(){ Array.prototype.forEach.call(dots.children,function(c,i){ c.classList.toggle('f',i<entry.length); }); }
+  function check(){
+    if(Date.now()<lockUntil){ sub.textContent=T('יותר מדי ניסיונות — המתן','Too many attempts — wait'); entry=''; paint(); return; }
+    hashPin(entry).then(function(h){
+      if(h===pc.hash){ lockFails=0; L.classList.remove('on'); L.innerHTML=''; }
+      else { lockFails++; entry=''; paint(); dots.classList.remove('lk-shake'); void dots.offsetWidth; dots.classList.add('lk-shake'); if(navigator.vibrate) navigator.vibrate(120);
+        if(lockFails>=5){ lockUntil=Date.now()+30000; lockFails=0; sub.textContent=T('5 ניסיונות שגויים — נסה שוב בעוד 30 שניות','5 wrong attempts — retry in 30s'); }
+        else sub.textContent=T('קוד שגוי','Wrong PIN'); }
+    });
+  }
+  var pad=document.createElement('div'); pad.className='lk-pad';
+  ['1','2','3','4','5','6','7','8','9','⌫','0','✓'].forEach(function(k){
+    var b=document.createElement('button'); b.className='lk-key'; b.textContent=k;
+    b.onclick=function(){
+      if(k==='⌫'){ entry=entry.slice(0,-1); paint(); return; }
+      if(k==='✓'){ if(entry.length) check(); return; }
+      if(entry.length>=len) return;
+      entry+=k; paint(); if(entry.length===len) setTimeout(check,120);
+    };
+    pad.appendChild(b);
+  });
+  var forgot=document.createElement('button'); forgot.className='lk-forgot'; forgot.textContent=T('שכחתי את הקוד','Forgot PIN');
+  forgot.onclick=function(){
+    if(!confirm(T('אין דרך לשחזר קוד שנשכח — זו ההגנה על המידע. האפשרות היחידה היא איפוס מלא שמוחק את כל הנתונים במכשיר (אם יש לך קובץ גיבוי, תוכל לשחזר ממנו אחרי האיפוס). להמשיך?','A forgotten PIN cannot be recovered — that is the protection. The only option is a full reset that deletes all data on this device (restore from a backup file afterwards). Continue?'))) return;
+    if(!confirm(T('אישור אחרון: למחוק את כל הנתונים?','Final confirmation: delete all data?'))) return;
+    factoryReset();
+  };
+  L.appendChild(mark); L.appendChild(tt); L.appendChild(sub); L.appendChild(dots); L.appendChild(pad); L.appendChild(forgot);
+}
+document.addEventListener('visibilitychange',function(){
+  var pc=pinCfg();
+  if(document.hidden){ hiddenAt=Date.now(); if(pc.hash&&pc.blur!==false) document.body.classList.add('priv'); }
+  else {
+    document.body.classList.remove('priv');
+    if(pc.hash&&hiddenAt&&(Date.now()-hiddenAt)>=((pc.after!=null?pc.after:60)*1000)) showLock();
+  }
+});
+function openPinSettings(){
+  var pc=pinCfg();
+  var ov=mkOv(); var bx=mkBx();
+  bx.appendChild(mkMoHd(T('🔒 נעילת קוד (PIN)','🔒 PIN Lock'),ov));
+  var body=document.createElement('div'); body.className='mo-body';
+  var info=document.createElement('div'); info.style.cssText='font-size:12px;color:var(--txt2);line-height:1.7;margin-bottom:14px;';
+  info.textContent=T('מגן על פרטי הלקוחות (חיסיון עו"ד-לקוח): האפליקציה תבקש קוד בכל פתיחה ואחרי שהייה ברקע. הקוד נשמר כגיבוב (hash) — לא ניתן לשחזר קוד שנשכח, רק לאפס את האפליקציה.','Protects client data (attorney-client privilege): the app asks for the PIN on open and after being in the background. The PIN is stored hashed — a forgotten PIN cannot be recovered, only reset.');
+  body.appendChild(info);
+  function close(){ if(document.body.contains(ov)) document.body.removeChild(ov); }
+  if(!pc.hash){
+    var f1=mkFld(T('קוד חדש (4–6 ספרות)','New PIN (4–6 digits)'),'password'); f1.i.inputMode='numeric'; f1.i.maxLength=6;
+    var f2=mkFld(T('הקלד שוב','Repeat'),'password'); f2.i.inputMode='numeric'; f2.i.maxLength=6;
+    body.appendChild(f1.w); body.appendChild(f2.w); bx.appendChild(body);
+    var ft=document.createElement('div'); ft.className='mo-foot';
+    var sv=document.createElement('button'); sv.className='btn btn-prim'; sv.textContent=T('✓ הפעל נעילה','✓ Enable');
+    sv.onclick=function(){
+      var a=f1.i.value.trim(), b2=f2.i.value.trim();
+      if(!/^\d{4,6}$/.test(a)){ toast(T('הקוד חייב להיות 4–6 ספרות','PIN must be 4–6 digits')); return; }
+      if(a!==b2){ toast(T('הקודים לא זהים','PINs do not match')); return; }
+      hashPin(a).then(function(h){ savePinCfg({hash:h,len:a.length,after:60,blur:true}); close(); toast(T('הנעילה הופעלה 🔒','Lock enabled 🔒')); renderSettings(); });
+    };
+    var cl=document.createElement('button'); cl.className='btn'; cl.textContent=T('ביטול','Cancel'); cl.onclick=close;
+    ft.appendChild(sv); ft.appendChild(cl); bx.appendChild(ft);
+  } else {
+    var sAfter=mkSel(T('נעל אחרי שהייה ברקע של','Lock after being in background for'),[{k:'0',he:'מיד',en:'Immediately'},{k:'60',he:'דקה',en:'1 minute'},{k:'300',he:'5 דקות',en:'5 minutes'},{k:'900',he:'15 דקות',en:'15 minutes'}]);
+    sAfter.i.value=String(pc.after!=null?pc.after:60);
+    sAfter.i.onchange=function(){ var o=pinCfg(); o.after=parseInt(sAfter.i.value,10); savePinCfg(o); toast(T('נשמר','Saved')); };
+    body.appendChild(sAfter.w);
+    var bRow=document.createElement('div'); bRow.style.cssText='display:flex;align-items:center;gap:10px;margin:6px 0 14px;';
+    var tg=document.createElement('div'); tg.className='tog'+(pc.blur!==false?' on':''); var kn=document.createElement('div'); kn.className='tog-k'; tg.appendChild(kn);
+    var bl=document.createElement('span'); bl.style.fontSize='13px'; bl.textContent=T('טשטש את המסך כשהאפליקציה ברקע','Blur the screen when in background');
+    tg.onclick=function(){ var o=pinCfg(); o.blur=(o.blur===false); savePinCfg(o); tg.classList.toggle('on',o.blur!==false); };
+    bRow.appendChild(tg); bRow.appendChild(bl); body.appendChild(bRow);
+    var fc=mkFld(T('לכיבוי או שינוי — הזן את הקוד הנוכחי','To disable or change — enter current PIN'),'password'); fc.i.inputMode='numeric'; fc.i.maxLength=6;
+    body.appendChild(fc.w); bx.appendChild(body);
+    var ft2=document.createElement('div'); ft2.className='mo-foot';
+    var off=document.createElement('button'); off.className='btn btn-red'; off.textContent=T('כבה נעילה','Disable');
+    off.onclick=function(){ hashPin(fc.i.value.trim()).then(function(h){ if(h!==pinCfg().hash){ toast(T('קוד שגוי','Wrong PIN')); return; } try{ localStorage.removeItem(APP+'_pin'); }catch(x){} close(); toast(T('הנעילה כובתה','Lock disabled')); renderSettings(); }); };
+    var chg=document.createElement('button'); chg.className='btn'; chg.textContent=T('שנה קוד','Change PIN');
+    chg.onclick=function(){ hashPin(fc.i.value.trim()).then(function(h){ if(h!==pinCfg().hash){ toast(T('קוד שגוי','Wrong PIN')); return; } try{ localStorage.removeItem(APP+'_pin'); }catch(x){} close(); openPinSettings(); }); };
+    var cl2=document.createElement('button'); cl2.className='btn'; cl2.textContent=T('סגור','Close'); cl2.onclick=close;
+    ft2.appendChild(chg); ft2.appendChild(off); ft2.appendChild(cl2); bx.appendChild(ft2);
+  }
+  ov.appendChild(bx); ov.onclick=function(e){ if(e.target===ov) close(); };
+  document.body.appendChild(ov);
+}
+
+/* ══════════════════════════════════════
+   DIAGNOSTICS — דוח אבחון (בלי תוכן תיקים ובלי מפתחות)
+══════════════════════════════════════ */
+function openDiagnostics(){
+  var d=getData(), errs=[];
+  try{ errs=JSON.parse(localStorage.getItem(APP+'_errs')||'[]'); }catch(x){}
+  var lines=['LexCalendar v'+VER,'תאריך: '+new Date().toLocaleString('he-IL'),'כתובת: '+location.origin+location.pathname,
+    'Service Worker: '+(navigator.serviceWorker&&navigator.serviceWorker.controller?'פעיל':'לא פעיל'),
+    'IndexedDB: '+(DB?'פעיל':'לא זמין'),'אחסון מתמשך: '+(storagePersisted===true?'אושר':storagePersisted===false?'לא אושר':'לא ידוע'),
+    'עוזר AI: '+(document.getElementById('appnest-assistant-btn')?'נטען':'לא נטען')+' · ספק: '+(aiCfg.provider||'אין'),
+    'נעילת קוד: '+(pinCfg().hash?'פעילה':'כבויה'),'עיצוב: '+theme+' · סגנון: '+uiLayout+' · שפה: '+lang,
+    'רשומות: לקוחות '+d.clients.length+' · תיקים '+d.cases.length+' · מועדים '+d.events.length+' · לוג '+d.logs.length+' · מסמכים '+(d.docs||[]).length,
+    'דפדפן: '+navigator.userAgent,'','שגיאות אחרונות ('+errs.length+'):'];
+  errs.slice().reverse().forEach(function(e){ lines.push('• '+e.t.slice(0,16).replace('T',' ')+' — '+e.m+(e.f?' ('+e.f+':'+e.l+')':'')); });
+  var text=lines.join('\n');
+  var ov=mkOv(); var bx=mkBx(); bx.appendChild(mkMoHd(T('🩺 דוח אבחון','🩺 Diagnostics'),ov));
+  var body=document.createElement('div'); body.className='mo-body';
+  var pre=document.createElement('pre'); pre.style.cssText='white-space:pre-wrap;font-size:11px;line-height:1.6;background:var(--bg3);padding:12px;border-radius:var(--r);direction:rtl;max-height:50vh;overflow:auto;'; pre.textContent=text;
+  var note=document.createElement('div'); note.style.cssText='font-size:11px;color:var(--txt3);margin-top:8px;'; note.textContent=T('הדוח לא כולל שמות לקוחות, תוכן תיקים או מפתחות — אפשר לשלוח אותו לתמיכה בבטחה.','The report contains no client names, case content or keys — safe to send to support.');
+  body.appendChild(pre); body.appendChild(note); bx.appendChild(body);
+  var ft=document.createElement('div'); ft.className='mo-foot';
+  var cp=document.createElement('button'); cp.className='btn btn-prim'; cp.textContent=T('📋 העתק','📋 Copy'); cp.onclick=function(){ if(navigator.clipboard) navigator.clipboard.writeText(text).then(function(){ toast(T('הועתק','Copied')); }); };
+  var ml=document.createElement('button'); ml.className='btn'; ml.textContent=T('✉️ שלח לתמיכה','✉️ Send to support'); ml.onclick=function(){ location.href='mailto:appnest55@gmail.com?subject='+encodeURIComponent('LexCalendar — דוח אבחון')+'&body='+encodeURIComponent(text); };
+  var rf=document.createElement('button'); rf.className='btn'; rf.textContent=T('🔄 רענון מלא','🔄 Hard refresh'); rf.onclick=hardRefresh;
+  var cl=document.createElement('button'); cl.className='btn'; cl.textContent=T('סגור','Close'); cl.onclick=function(){ document.body.removeChild(ov); };
+  ft.appendChild(cp); ft.appendChild(ml); ft.appendChild(rf); ft.appendChild(cl); bx.appendChild(ft);
+  ov.appendChild(bx); ov.onclick=function(e){ if(e.target===ov) document.body.removeChild(ov); };
+  document.body.appendChild(ov);
+}
+
+/* ══════════════════════════════════════
+   ABOUT
+══════════════════════════════════════ */
+function renderAbout(){
+  var w=document.getElementById('about-wrap'); if(!w) return; w.innerHTML='';
+  var hero=document.createElement('div'); hero.className='about-hero';
+  hero.innerHTML='<div class="about-mark">⚖️</div><div class="about-name">LexCalendar</div><div class="about-ver">v'+VER+'</div>';
+  w.appendChild(hero);
+  var card=document.createElement('div'); card.className='card'; card.style.padding='16px';
+  var desc=document.createElement('p'); desc.style.cssText='font-size:13px;color:var(--txt2);line-height:1.7;margin-bottom:12px;';
+  desc.textContent=T('מערכת ניהול משפטית לעורכי דין ונוטריונים בישראל — לקוחות, תיקים, מועדים, שעות, שכר טרחה ושיתוף עדכונים עם לקוחות. כל הנתונים נשמרים על המכשיר שלך בלבד.','Legal practice management for Israeli lawyers and notaries. All data stays on your device.');
+  card.appendChild(desc);
+  [[T('גרסה','Version'),VER],[T('פיתוח','Developer'),'Barak Aflalo'],[T('פלטפורמה','Platform'),'PWA · HTML5'],[T('אחסון','Storage'),T('על המכשיר בלבד','On-device only')],[T('רישיון','License'),'© AppNest 2026']].forEach(function(r){
+    var row=document.createElement('div'); row.style.cssText='display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid var(--brd);font-size:12px;';
+    var a=document.createElement('span'); a.style.color='var(--txt3)'; a.textContent=r[0];
+    var b=document.createElement('span'); b.style.fontWeight='600'; b.textContent=r[1];
+    row.appendChild(a); row.appendChild(b); card.appendChild(row);
+  });
+  w.appendChild(card);
+  var disc=document.createElement('div'); disc.className='warn-box';
+  disc.textContent=T('⚖️ הסרת אחריות: LexCalendar הוא כלי עזר לניהול ואינו מהווה ייעוץ משפטי. מאגר המועדים, החישובים האוטומטיים ותשובות ה-AI הם הערכה בלבד — האחריות לאימות כל מועד מול נוסח החוק/התקנות העדכני, ימי פגרה והחלטות בית המשפט היא של המשתמש.','⚖️ Disclaimer: LexCalendar is a management aid, not legal advice. The deadline database, automatic calculations and AI answers are estimates only — verifying every deadline against current law, recess periods and court decisions is the user\'s responsibility.');
+  w.appendChild(disc);
+  var acts=document.createElement('div'); acts.style.cssText='display:flex;flex-direction:column;gap:8px;';
+  [[T('📣 שתף את האפליקציה','📣 Share the app'),shareApp],
+   [T('✉️ שלח משוב','✉️ Send feedback'),function(){ location.href='mailto:appnest55@gmail.com?subject='+encodeURIComponent('LexCalendar v'+VER+' — משוב'+(uname?' מ'+uname:'')); }],
+   [T('📋 מדריך','📋 Guide'),showGuide],
+   [T('🔒 מדיניות פרטיות','🔒 Privacy policy'),function(){ window.open('privacy_policy.html','_blank'); }],
+   [T('🏠 חנות AppNest — עוד אפליקציות','🏠 AppNest store — more apps'),function(){ window.open('https://barakaflalo.github.io/appnest','_blank'); }]
+  ].forEach(function(x){ var b=document.createElement('button'); b.className='btn btn-full'; b.textContent=x[0]; b.onclick=x[1]; acts.appendChild(b); });
+  w.appendChild(acts);
+}
+
+/* ══════════════════════════════════════
    INIT
 ══════════════════════════════════════ */
 function init(){
-  loadCfg(); applyTheme(); buildSidebar(); buildL2Nav(); buildBottomNav(0); loadGoogleApi();
-  if(!localStorage.getItem(APP+'_fr')) showGuide();
+  loadCfg(); loadAiCfg(); applyTheme(); buildSidebar(); buildL2Nav(); buildBottomNav(0); loadGoogleApi();
+  if(pinCfg().hash) showLock();
+  if(location.protocol==='file:') setTimeout(function(){ toast(T('⚠️ האפליקציה נפתחה מקובץ מקומי — התקנה, אופליין ושמירה לא יעבדו כראוי. פתח מהכתובת באינטרנט.','⚠️ Opened from a local file — install/offline/storage will not work properly. Open it from the web address.'),6000); },800);
+  var isNew=!localStorage.getItem(APP+'_fr')&&!(getData().cases||[]).length&&!(getData().clients||[]).length;
+  if(!localStorage.getItem(APP+'_fr')){ if(isNew) showGuide(); else { try{ localStorage.setItem(APP+'_fr','1'); }catch(x){} } }
   renderDash(); applyLbls();
+  idbOpen().then(function(){ requestPersist(); return migrateDocs(); }).then(loadAiKeys).then(function(){ applyTheme(); checkAssistantLoaded(); if(curPg==='pg-set') renderSettings(); });
   setTimeout(checkAndShowNotifications, 1500);
-  if('serviceWorker' in navigator){
+  if('serviceWorker' in navigator && location.protocol!=='file:'){
     navigator.serviceWorker.register('sw.js').catch(function(){});
   }
 }
 init();
 </script>
+<script src="appnest-assistant.js?v=3.0.0"></script>
 </body>
 </html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LexCalendar — מדיניות פרטיות</title>
+<meta name="theme-color" content="#0d1f3c">
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--txt:#111827;--txt2:#4b5563;--acc:#1a56db;--brd:#e5e7eb;--hd:#0d1f3c}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1117;--card:#1a1d27;--txt:#e8edf5;--txt2:#9ca3af;--acc:#7aabf7;--brd:#2d3250;--hd:#070b14}}
+*{box-sizing:border-box}body{margin:0;font-family:Heebo,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--txt);line-height:1.75}
+header{background:var(--hd);color:#fff;padding:28px 20px;text-align:center}header .m{font-size:40px}header h1{margin:6px 0 2px;font-size:22px}header p{margin:0;opacity:.65;font-size:13px}
+.lang{display:flex;justify-content:center;gap:8px;margin:14px 0}.lang button{border:1px solid var(--brd);background:var(--card);color:var(--txt);border-radius:99px;padding:6px 16px;cursor:pointer;font-family:inherit}
+.lang button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+main{max-width:760px;margin:0 auto;padding:0 16px 40px}section{background:var(--card);border:1px solid var(--brd);border-radius:12px;padding:16px 20px;margin-bottom:12px}
+h2{font-size:16px;margin:0 0 6px;color:var(--acc)}p,li{font-size:14px;color:var(--txt2)}a{color:var(--acc)}
+.en{display:none;direction:ltr;text-align:left}body.en-on .he{display:none}body.en-on .en{display:block}
+footer{text-align:center;font-size:12px;color:var(--txt2);padding:10px}
+</style>
+</head>
+<body>
+<header><div class="m">⚖️</div><h1>LexCalendar</h1><p class="he">מדיניות פרטיות · עודכן: ספטמבר 2026</p><p class="en">Privacy Policy · Updated: September 2026</p></header>
+<div class="lang"><button id="bhe" class="on" onclick="setL('he')">עברית</button><button id="ben" onclick="setL('en')">English</button></div>
+<main>
+<div class="he">
+<section><h2>1. הכל נשמר על המכשיר שלך</h2><p>כל הנתונים שאתה מזין — לקוחות, תיקים, מועדים, לוג פעולות, שעות, שכר טרחה ומסמכים — נשמרים רק באחסון המקומי של הדפדפן במכשיר שלך. אין ל-AppNest שרת שמקבל, שומר או רואה את המידע הזה.</p></section>
+<section><h2>2. מה יוצא מהמכשיר, ורק ביוזמתך</h2><ul>
+<li><b>עוזר AI (רק אם חיברת מפתח משלך):</b> השאלה שלך, ומידע שבחרת לשתף במפורש (למשל רשימת מועדים קרובים — כבוי כברירת מחדל), נשלחים ישירות לספק שבחרת — Google (Gemini), Anthropic (Claude), OpenAI או שרת שהגדרת בעצמך — וכפופים לתנאי השימוש שלו. בלי מפתח — לא נשלח כלום.</li>
+<li><b>כפתור "שאל AI" בלי מפתח:</b> מעתיק או משתף את השאלה לאפליקציית AI שבחרת במכשיר. זו פעולה שלך דרך מערכת השיתוף של הטלפון.</li>
+<li><b>Google Calendar (אופציונלי):</b> רק אם התחברת — המועדים שבחרת לסנכרן נשלחים ליומן Google שלך.</li>
+<li><b>שיתוף עם לקוח / WhatsApp / מייל:</b> ההודעה נפתחת באפליקציה שבחרת, ונשלחת רק כשאתה לוחץ שלח.</li></ul></section>
+<section><h2>3. מפתח AI וקוד נעילה</h2><p>מפתח ה-AI נשמר מוצפן (AES-256-GCM) על המכשיר ואינו נכלל בקובצי גיבוי. ההצפנה מגינה על המפתח במנוחה, אך אינה הגנה מוחלטת מפני קוד זדוני שרץ באותו דפדפן. קוד הנעילה (PIN) נשמר כגיבוב חד-כיווני ואינו ניתן לשחזור.</p></section>
+<section><h2>4. מצלמה וקבצים</h2><p>צילום וסריקת מסמכים נעשים מקומית. הקבצים נשמרים באחסון המקומי של המכשיר (IndexedDB) ולא מועלים לשום מקום, אלא אם שיתפת או הורדת אותם בעצמך.</p></section>
+<section><h2>5. אין מעקב</h2><p>אין אנליטיקה, אין עוגיות מעקב, אין פרסומות ואין מכירת מידע.</p></section>
+<section><h2>6. שליטה מלאה</h2><p>אפשר לגבות את כל הנתונים לקובץ, לשחזר, ולמחוק הכל לצמיתות מתוך ההגדרות. מחיקת נתוני הדפדפן/הסרת האפליקציה מוחקת את המידע מהמכשיר — לכן מומלץ לגבות.</p></section>
+<section><h2>7. אינו ייעוץ משפטי</h2><p>LexCalendar הוא כלי עזר לניהול. מאגר המועדים, החישובים האוטומטיים ותשובות ה-AI הם הערכה בלבד ואינם ייעוץ משפטי. האחריות לאמת כל מועד מול החוק והתקנות העדכניים והחלטות בית המשפט היא של המשתמש.</p></section>
+<section><h2>8. יצירת קשר</h2><p>Barak Aflalo · AppNest · <a href="mailto:appnest55@gmail.com">appnest55@gmail.com</a></p></section>
+</div>
+<div class="en">
+<section><h2>1. Everything stays on your device</h2><p>All data you enter — clients, cases, deadlines, activity log, hours, fees and documents — is stored only in your browser's local storage on your device. AppNest has no server that receives, stores or sees it.</p></section>
+<section><h2>2. What leaves the device — only when you choose</h2><ul>
+<li><b>AI assistant (only with your own key):</b> your question, and data you explicitly chose to share (e.g. upcoming deadlines — off by default), go directly to the provider you selected (Google, Anthropic, OpenAI or your own server), under its terms. Without a key nothing is sent.</li>
+<li><b>"Ask AI" without a key:</b> copies/shares your question to an AI app you pick, via your phone's share menu.</li>
+<li><b>Google Calendar (optional):</b> only if you sign in — deadlines you sync are sent to your Google Calendar.</li>
+<li><b>Share with client / WhatsApp / email:</b> the message opens in the app you choose and is sent only when you press send.</li></ul></section>
+<section><h2>3. AI key and PIN</h2><p>The AI key is stored encrypted (AES-256-GCM) on the device and never included in backups. Encryption protects the key at rest but is not absolute protection against malicious code running in the same browser. The PIN is stored as a one-way hash and cannot be recovered.</p></section>
+<section><h2>4. Camera and files</h2><p>Document capture happens locally. Files are stored in the device's local storage (IndexedDB) and are not uploaded anywhere unless you share or download them yourself.</p></section>
+<section><h2>5. No tracking</h2><p>No analytics, no tracking cookies, no ads, no data sales.</p></section>
+<section><h2>6. Full control</h2><p>Back up all data to a file, restore it, or permanently delete everything from Settings. Clearing browser data or uninstalling removes the data from the device — so back up.</p></section>
+<section><h2>7. Not legal advice</h2><p>LexCalendar is a management aid. The deadline database, automatic calculations and AI answers are estimates, not legal advice. Verifying every deadline against current law and court decisions is the user's responsibility.</p></section>
+<section><h2>8. Contact</h2><p>Barak Aflalo · AppNest · <a href="mailto:appnest55@gmail.com">appnest55@gmail.com</a></p></section>
+</div>
+</main>
+<footer>© AppNest 2026 · <a href="./">LexCalendar</a></footer>
+<script>function setL(l){document.body.classList.toggle('en-on',l==='en');document.documentElement.dir=l==='en'?'ltr':'rtl';document.documentElement.lang=l;document.getElementById('bhe').classList.toggle('on',l==='he');document.getElementById('ben').classList.toggle('on',l==='en');}</script>
+</body>
+</html>
