@@ -550,13 +550,13 @@ body:not(.ai-on) #appnest-assistant-btn{display:none!important;}
 <nav class="bnav" id="bnav"></nav>
 </div><!-- /app -->
 
-<script src="lex-laws.js?v=3.2.1"></script>
-<script src="lex-help.js?v=3.2.1"></script>
+<script src="lex-laws.js?v=3.2.2"></script>
+<script src="lex-help.js?v=3.2.2"></script>
 <script>
 /* ══════════════════════════════════════
    STATE & CONSTANTS
 ══════════════════════════════════════ */
-var APP='lxc2', VER='3.2.1';
+var APP='lxc2', VER='3.2.2';
 var lang='he', theme='default', uname='', uprof='lawyer';
 var a7=true,a3=true,a1=true;
 var alertCfg={
@@ -768,9 +768,11 @@ function renderAlerts(){
     if(alertCfg.deadlinesOverdue&&alertCfg.deadlinesOverdue.on&&dy<0) items.push({ev:ev,type:'overdue',dy:dy});
   });
   d.cases.forEach(function(c){
-    if(alertCfg.feeUnpaid&&alertCfg.feeUnpaid.on&&c.payStatus==='pending'&&c.fee>0){
+    var fnc=caseFinance(d,c);
+    if(alertCfg.feeUnpaid&&alertCfg.feeUnpaid.on&&c.status!=='closed'&&fnc.balance>0&&c.payStatus!=='paid'){
       var threshold=alertCfg.feeUnpaid.days||14;
-      items.push({type:'fee',label:T('שכ"ט ממתין — ','Unpaid fee — ')+c.name,sub:fmtMoney(c.fee),caseId:c.id});
+      var since=Math.round((new Date()-new Date(c.created||today()))/86400000);
+      if(since>=threshold) items.push({type:'fee',label:T('יתרת שכ"ט — ','Fee balance — ')+c.name,sub:T('יתרה ','Balance ')+fmtMoney(fnc.balance)+(fnc.paid?T(' (שולמו ',' (paid ')+fmtMoney(fnc.paid)+')':''),caseId:c.id});
     }
   });
   loadPendingNotifs();
@@ -1592,6 +1594,16 @@ function renderCasesList(){
   tbl.appendChild(tbody); card.appendChild(tbl);
 }
 
+function caseFinance(d,c){
+  var fee=Number(c.fee||0), paid=Number(c.paidAmount||0);
+  if(c.payStatus==='paid'&&!paid) paid=fee;
+  var hrs=0, logged=0;
+  (d.logs||[]).forEach(function(lg){ if(lg.caseId===c.id){ hrs+=Number(lg.hours||0); logged+=Number(lg.amount||0); } });
+  return {fee:fee,paid:paid,balance:Math.max(0,fee-paid),hours:hrs,logged:logged};
+}
+function lastRateFor(d,caseId){
+  var r=0; (d.logs||[]).forEach(function(lg){ if(lg.caseId===caseId&&Number(lg.rate)>0) r=Number(lg.rate); }); return r;
+}
 function openCaseDetail(caseId){
   var d=getData(); var c=d.cases.find(function(x){ return x.id===caseId; }); if(!c) return;
   var cl=d.clients.find(function(x){ return x.id===c.clientId; });
@@ -1604,6 +1616,19 @@ function openCaseDetail(caseId){
     var b=document.createElement('span'); b.className='badge '+it.cls; b.textContent=it.v; info.appendChild(b);
   });
   body.appendChild(info);
+  var fin=caseFinance(d,c);
+  if(fin.fee||fin.hours||fin.logged){
+    var fb=document.createElement('button'); fb.className='btn btn-sm'; fb.style.marginBottom='12px';
+    fb.textContent=T('💰 הצג כספים ושעות','💰 Show fees & hours');
+    var fcard=document.createElement('div'); fcard.style.cssText='display:none;background:var(--bg3);border-radius:var(--r);padding:12px;margin-bottom:14px;display:none;grid-template-columns:1fr 1fr;gap:8px;';
+    [[T('שכ"ט מוסכם','Agreed fee'),fmtMoney(fin.fee)],[T('שולם','Paid'),fmtMoney(fin.paid)],[T('יתרה לתשלום','Balance'),fmtMoney(fin.balance)],[T('שעות בלוג','Logged hours'),fin.hours.toFixed(1)+'h'],[T('שווי השעות בלוג','Logged hours value'),fmtMoney(fin.logged)]].forEach(function(r,i){
+      var cell=document.createElement('div'); var a=document.createElement('div'); a.style.cssText='font-size:10px;color:var(--txt3);'; a.textContent=r[0];
+      var b=document.createElement('div'); b.style.cssText='font-size:14px;font-weight:700;'+(i===2&&fin.balance>0?'color:var(--red);':''); b.textContent=r[1];
+      cell.appendChild(a); cell.appendChild(b); fcard.appendChild(cell);
+    });
+    fb.onclick=function(){ var open=fcard.style.display==='none'; fcard.style.display=open?'grid':'none'; fb.textContent=open?T('🙈 הסתר כספים','🙈 Hide fees'):T('💰 הצג כספים ושעות','💰 Show fees & hours'); };
+    body.appendChild(fb); body.appendChild(fcard);
+  }
   var evs=d.events.filter(function(ev){ return ev.caseId===caseId; });
   evs.sort(function(a,b2){ return (a.date||'').localeCompare(b2.date||''); });
   var evLbl=document.createElement('div'); evLbl.style.cssText='font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;'; evLbl.textContent=T('מועדים ('+evs.length+')','Deadlines ('+evs.length+')'); body.appendChild(evLbl);
@@ -1798,6 +1823,8 @@ function openEditCase(caseId){
     var newStatus=fStatus.i.value; c.status=newStatus;
     c.serviceDate=fSvc.i.value; c.fee=fFee.i.value; c.payStatus=fPayStatus.i.value;
     c.paidAmount=fPaid.i.value; c.notes=fNotes.i.value.trim();
+    var fe=Number(c.fee||0), pd=Number(c.paidAmount||0);
+    if(fe>0&&pd>=fe) c.payStatus='paid'; else if(pd>0&&pd<fe&&c.payStatus!=='overdue') c.payStatus='partial';
     saveData(d); document.body.removeChild(ov); toast(T('נשמר','Saved'));
     if(newStatus!==oldStatus&&alertCfg.notifyOnStatusChange&&alertCfg.notifyOnStatusChange.on){
       pendingNotifications.push({id:uid(),type:'client-update',caseId:c.id,title:T('סטטוס תיק השתנה','Case Status Changed'),body:T('תיק "'+c.name+'" — '+newStatus+'. האם לעדכן את הלקוח?','Case "'+c.name+'" → '+newStatus+'. Update client?')});
@@ -2093,6 +2120,11 @@ function openNewLog(caseId){
   var fHours=mkFld(T('שעות עבודה','Hours Worked'),'number'); fHours.i.step='0.5';
   var fRate=mkFld(T('תעריף לשעה (₪)','Hourly Rate (₪)'),'number');
   grid2.appendChild(fHours.w); grid2.appendChild(fRate.w); body.appendChild(grid2);
+  var amt=document.createElement('div'); amt.style.cssText='font-size:12px;color:var(--txt2);margin:-4px 0 10px;';
+  function upd(){ var h=parseFloat(fHours.i.value)||0, r=parseFloat(fRate.i.value)||0; amt.textContent=h&&r?T('סכום לתיעוד: ','Amount: ')+fmtMoney(Math.round(h*r))+T(' — יתווסף לשווי השעות של התיק',' — added to the case\'s logged value'):''; }
+  function prefill(){ var cid0=caseId||(fCase?fCase.i.value:''); var lr=cid0?lastRateFor(d,cid0):0; if(lr&&!fRate.i.value) fRate.i.value=lr; upd(); }
+  fHours.i.oninput=upd; fRate.i.oninput=upd; if(fCase) fCase.i.onchange=function(){ fRate.i.value=''; prefill(); };
+  prefill(); body.appendChild(amt);
   var fNotes=mkTa(T('הערות','Notes')); body.appendChild(fNotes.w);
   bx.appendChild(body);
   var ft=document.createElement('div'); ft.className='mo-foot';
@@ -2182,7 +2214,7 @@ function renderHoursList(){
     if(!caseAmounts[lg.caseId]) caseAmounts[lg.caseId]=0;
     caseAmounts[lg.caseId]+=Number(lg.amount||0);
   });
-  d.cases.forEach(function(c){ if(c.payStatus==='paid') totalPaid+=Number(c.fee||0); else totalPending+=Number(c.fee||0); });
+  d.cases.forEach(function(c){ if(hrCaseFilter&&hrCaseFilter!=='all'&&c.id!==hrCaseFilter) return; var f=caseFinance(d,c); totalPaid+=f.paid; totalPending+=f.balance; });
   var sg=document.getElementById('hr-stats'); sg.innerHTML='';
   [{n:totalHours.toFixed(1)+'h',l:T('סה"כ שעות','Total Hours'),cls:'stat-acc'},{n:fmtMoney(totalAmount),l:T('סה"כ שכ"ט','Total Fees'),cls:'stat-grn'},{n:fmtMoney(totalPaid),l:T('שולם','Paid'),cls:'stat-grn'},{n:fmtMoney(totalPending),l:T('ממתין לתשלום','Pending'),cls:'stat-amb'}].forEach(function(it){
     var c=document.createElement('div'); c.className='stat '+it.cls;
@@ -3734,6 +3766,6 @@ function init(){
 }
 init();
 </script>
-<script src="appnest-assistant.js?v=3.2.1"></script>
+<script src="appnest-assistant.js?v=3.2.2"></script>
 </body>
 </html>
