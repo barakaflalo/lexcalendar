@@ -550,13 +550,13 @@ body:not(.ai-on) #appnest-assistant-btn{display:none!important;}
 <nav class="bnav" id="bnav"></nav>
 </div><!-- /app -->
 
-<script src="lex-laws.js?v=3.2.2"></script>
-<script src="lex-help.js?v=3.2.2"></script>
+<script src="lex-laws.js?v=3.3.0"></script>
+<script src="lex-help.js?v=3.3.0"></script>
 <script>
 /* ══════════════════════════════════════
    STATE & CONSTANTS
 ══════════════════════════════════════ */
-var APP='lxc2', VER='3.2.2';
+var APP='lxc2', VER='3.3.0';
 var lang='he', theme='default', uname='', uprof='lawyer';
 var a7=true,a3=true,a1=true;
 var alertCfg={
@@ -592,7 +592,8 @@ function checkAndShowNotifications(){
     return ra<=now;
   });
   if(due.length===0) return;
-  due.forEach(function(n){ showNotifBanner(n); });
+  showNotifBanner(due[0]);
+  if(due.length>1) setTimeout(function(){ toast(T('ועוד '+(due.length-1)+' התראות — במסך ההתראות 🔔','+'+(due.length-1)+' more in Alerts 🔔'),4000); },900);
 }
 
 function showNotifBanner(notif){
@@ -656,6 +657,33 @@ function openRemindLater(notif){
   document.body.appendChild(ov);
 }
 
+function loadTpls(){ try{ return JSON.parse(localStorage.getItem(APP+'_tpl')||'[]'); }catch(x){ return []; } }
+function saveTpls(t){ try{ localStorage.setItem(APP+'_tpl',JSON.stringify(t)); }catch(x){ toast(T('שגיאת שמירה','Save error')); } }
+var TPL_VARS=['{לקוח}','{תיק}','{מספר_תיק}','{מועד_קרוב}','{תאריך_מועד}','{עורך_דין}','{היום}'];
+function fillTpl(text,c,cl,evs){
+  var nx=evs&&evs[0];
+  return String(text||'')
+    .split('{לקוח}').join(cl?cl.name:'')
+    .split('{תיק}').join(c?c.name:'')
+    .split('{מספר_תיק}').join(c&&c.caseNum?c.caseNum:'')
+    .split('{מועד_קרוב}').join(nx?nx.title:'')
+    .split('{תאריך_מועד}').join(nx?fmtDate(nx.date):'')
+    .split('{עורך_דין}').join(uname||'')
+    .split('{היום}').join(fmtDate(today()));
+}
+function waNumber(phone){
+  var p=String(phone||'').replace(/[^\d+]/g,'');
+  if(p.indexOf('+')===0) p=p.slice(1);
+  if(p.indexOf('00')===0) p=p.slice(2);
+  if(p.indexOf('0')===0) p='972'+p.slice(1);
+  return p;
+}
+function markClientUpdated(caseId){
+  var d=getData(); var c=d.cases.find(function(x){ return x.id===caseId; }); if(!c) return;
+  c.lastClientUpdate=today(); c.updated=today();
+  var cl=d.clients.find(function(x){ return x.id===c.clientId; }); if(cl) cl.lastContact=today();
+  saveData(d);
+}
 function openShareWithClient(caseId){
   var d=getData(); var c=d.cases.find(function(x){ return x.id===caseId; }); if(!c) return;
   var cl=d.clients.find(function(x){ return x.id===c.clientId; });
@@ -663,44 +691,133 @@ function openShareWithClient(caseId){
   bx.appendChild(mkMoHd(T('שתף עם לקוח','Share with Client'),ov));
   var body=document.createElement('div'); body.className='mo-body';
   var caseInfo=document.createElement('div'); caseInfo.style.cssText='background:var(--bg3);border-radius:var(--r);padding:10px 12px;margin-bottom:14px;font-size:13px;color:var(--txt2);';
-  caseInfo.textContent=T('תיק: ','Case: ')+c.name+(cl?' · '+T('לקוח: ','Client: ')+cl.name:'');
+  caseInfo.textContent=T('תיק: ','Case: ')+c.name+(cl?' · '+T('לקוח: ','Client: ')+cl.name:'')+(c.lastClientUpdate?' · '+T('עודכן לאחרונה: ','Last updated: ')+fmtDate(c.lastClientUpdate):'');
   body.appendChild(caseInfo);
-  var evs=d.events.filter(function(ev){ return ev.caseId===caseId&&ev.date&&daysTo(ev.date)>=0; });
+  var evs=d.events.filter(function(ev){ return ev.caseId===caseId&&ev.date&&daysTo(ev.date)>=0&&!ev.done; });
   evs.sort(function(a,b){ return a.date.localeCompare(b.date); });
-  var templatesLabel=document.createElement('div'); templatesLabel.className='fl'; templatesLabel.textContent=T('תבנית הודעה','Message Template'); body.appendChild(templatesLabel);
-  var templates=[
-    {he:'מצב תיק',en:'Case Status',fn:function(){ return T('שלום, ברצוני לעדכנך על מצב התיק "'+c.name+'". ','Hello, I would like to update you on the status of case "'+c.name+'". '); }},
-    {he:'מועדים קרובים',en:'Upcoming Deadlines',fn:function(){ var msg=T('מועדים קרובים בתיק '+c.name+':\n','Upcoming deadlines in '+c.name+':\n'); evs.slice(0,3).forEach(function(ev){ msg+=fmtDate(ev.date)+' — '+ev.title+'\n'; }); return msg; }},
-    {he:'בקשת מסמכים',en:'Document Request',fn:function(){ return T('שלום, נדרשים מסמכים נוספים לטיפול בתיק "'+c.name+'". אנא צור קשר להסדרת העברתם. ','Hello, additional documents are required for case "'+c.name+'". Please contact us to arrange their transfer. '); }},
-    {he:'תזכורת דיון',en:'Hearing Reminder',fn:function(){ var next=evs[0]; return next?T('תזכורת: ביום '+fmtDate(next.date)+' מתקיים '+next.title+' בתיקך. ','Reminder: On '+fmtDate(next.date)+' there is '+next.title+' in your case. '):''; }}
+  var greet=T('שלום'+(cl?' '+cl.name:'')+',\n','Hello'+(cl?' '+cl.name:'')+',\n');
+  var sign=uname?T('\n\nבברכה,\n'+uname,'\n\nBest regards,\n'+uname):'';
+  var BUILTIN=[
+    {he:'מצב תיק',en:'Case status',fn:function(){ return greet+T('ברצוני לעדכנך על מצב התיק "'+c.name+'"'+(c.caseNum?' ('+c.caseNum+')':'')+': ','I would like to update you on case "'+c.name+'": ')+sign; }},
+    {he:'מועדים קרובים',en:'Upcoming dates',fn:function(){ var m=greet+T('להלן המועדים הקרובים בתיק "'+c.name+'":\n','Upcoming dates in "'+c.name+'":\n'); if(!evs.length) m+=T('אין כרגע מועדים קרובים.\n','No upcoming dates.\n'); evs.slice(0,5).forEach(function(ev){ m+='• '+fmtDate(ev.date)+' — '+ev.title+'\n'; }); return m+sign; }},
+    {he:'בקשת מסמכים',en:'Document request',fn:function(){ return greet+T('לצורך הטיפול בתיק "'+c.name+'" נדרשים המסמכים הבאים:\n• \n• \nאודה להעברתם בהקדם.','For case "'+c.name+'" we need the following documents:\n• \n• \nPlease send them soon.')+sign; }},
+    {he:'תזכורת דיון',en:'Hearing reminder',fn:function(){ var nx=evs[0]; return greet+(nx?T('תזכורת: ביום '+fmtDate(nx.date)+' — '+nx.title+' בתיק "'+c.name+'".','Reminder: on '+fmtDate(nx.date)+' — '+nx.title+' in "'+c.name+'".'):T('אין כרגע מועד קרוב בתיק.','No upcoming date in the case.'))+sign; }}
   ];
-  var tplGrid=document.createElement('div'); tplGrid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;';
-  var msgArea=mkTa(T('הודעה','Message')); msgArea.i.rows=5; msgArea.i.placeholder=T('הודעה ללקוח — כתוב כאן או בקש מהעוזר לנסח','Message to client — type here or ask the assistant');
-  templates.forEach(function(tpl){
-    var btn=document.createElement('button'); btn.className='btn btn-sm'; btn.textContent=T(tpl.he,tpl.en);
-    btn.onclick=function(){ msgArea.i.value=tpl.fn(); };
-    tplGrid.appendChild(btn);
-  });
+  var tl=document.createElement('div'); tl.className='fl'; tl.textContent=T('תבניות מוכנות','Ready templates'); body.appendChild(tl);
+  var tplGrid=document.createElement('div'); tplGrid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;';
+  var msgArea=mkTa(T('הודעה','Message')); msgArea.i.rows=7; msgArea.i.placeholder=T('הודעה ללקוח — כתוב כאן או בקש מהעוזר לנסח','Message to client — type here or ask the assistant');
+  BUILTIN.forEach(function(tpl){ var btn=document.createElement('button'); btn.className='btn btn-sm'; btn.textContent=T(tpl.he,tpl.en); btn.onclick=function(){ msgArea.i.value=tpl.fn(); }; tplGrid.appendChild(btn); });
   body.appendChild(tplGrid);
+  var ml=document.createElement('div'); ml.className='fl'; ml.textContent=T('התבניות שלי','My templates'); body.appendChild(ml);
+  var myGrid=document.createElement('div'); myGrid.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;';
+  function drawMine(){
+    myGrid.innerHTML='';
+    var mine=loadTpls();
+    if(!mine.length){ var e=document.createElement('div'); e.style.cssText='font-size:12px;color:var(--txt3);'; e.textContent=T('עוד אין — כתוב הודעה ולחץ "💾 שמור כתבנית".','None yet — write a message and tap "💾 Save as template".'); myGrid.appendChild(e); }
+    mine.forEach(function(t){
+      var chip=document.createElement('span'); chip.style.cssText='display:inline-flex;align-items:center;border:1px solid var(--acc);border-radius:99px;overflow:hidden;';
+      var use=document.createElement('button'); use.style.cssText='background:var(--acc-s);color:var(--acc-t);border:none;padding:5px 11px;font-size:12px;font-family:inherit;cursor:pointer;'; use.textContent=t.name;
+      use.onclick=function(){ msgArea.i.value=fillTpl(t.text,c,cl,evs); };
+      var del=document.createElement('button'); del.style.cssText='background:none;border:none;border-inline-start:1px solid var(--acc);padding:5px 8px;font-size:11px;cursor:pointer;color:var(--txt3);'; del.textContent='✕'; del.title=T('מחק תבנית','Delete template');
+      del.onclick=function(){ if(!confirm(T('למחוק את התבנית "'+t.name+'"?','Delete template "'+t.name+'"?'))) return; saveTpls(loadTpls().filter(function(x){ return x.id!==t.id; })); drawMine(); };
+      chip.appendChild(use); chip.appendChild(del); myGrid.appendChild(chip);
+    });
+  }
+  drawMine(); body.appendChild(myGrid);
   body.appendChild(msgArea.w);
-  var addLabel=document.createElement('div'); addLabel.className='fl'; addLabel.style.marginTop='8px'; addLabel.textContent=T('הוסף מלל חופשי','Add free text'); body.appendChild(addLabel);
-  var sendLabel=document.createElement('div'); sendLabel.className='fl'; sendLabel.style.marginTop='10px'; sendLabel.textContent=T('שלח דרך','Send via'); body.appendChild(sendLabel);
+  var vars=document.createElement('div'); vars.style.cssText='font-size:11px;color:var(--txt3);margin:-4px 0 8px;line-height:1.7;';
+  vars.textContent=T('בתבנית אפשר לכתוב משתנים שיתמלאו לבד: ','Template variables: ')+TPL_VARS.join(' ');
+  body.appendChild(vars);
+  var saveT=document.createElement('button'); saveT.className='btn btn-sm'; saveT.style.marginBottom='12px'; saveT.textContent=T('💾 שמור כתבנית','💾 Save as template');
+  saveT.onclick=function(){
+    var txt=msgArea.i.value.trim(); if(!txt){ toast(T('כתוב קודם הודעה','Write a message first')); return; }
+    var nm=prompt(T('שם לתבנית:','Template name:')); if(!nm||!nm.trim()) return;
+    var generic=txt; if(cl&&cl.name) generic=generic.split(cl.name).join('{לקוח}'); if(c.name) generic=generic.split(c.name).join('{תיק}'); if(c.caseNum) generic=generic.split(c.caseNum).join('{מספר_תיק}'); evs.slice(0,1).forEach(function(nx){ generic=generic.split(nx.title).join('{מועד_קרוב}').split(fmtDate(nx.date)).join('{תאריך_מועד}'); }); if(uname) generic=generic.split(uname).join('{עורך_דין}');
+    var mine=loadTpls(); mine.push({id:uid(),name:nm.trim(),text:generic}); saveTpls(mine); drawMine(); toast(T('התבנית נשמרה ✓ (שם הלקוח והתיק הוחלפו במשתנים)','Template saved ✓'));
+  };
+  body.appendChild(saveT);
+  var sendLabel=document.createElement('div'); sendLabel.className='fl'; sendLabel.textContent=T('שלח דרך','Send via'); body.appendChild(sendLabel);
   var sendBtns=document.createElement('div'); sendBtns.style.cssText='display:flex;gap:8px;flex-wrap:wrap;';
   var phone=cl?cl.phone||'':'';
+  function need(){ var m=msgArea.i.value.trim(); if(!m){ toast(T('חסרה הודעה','Message required')); return null; } return m; }
   var waBtn=document.createElement('button'); waBtn.className='btn'; waBtn.style.cssText='background:#25d366;color:#fff;border-color:#25d366;';
-  waBtn.textContent='💬 WhatsApp';
-  waBtn.onclick=function(){ var msg=msgArea.i.value; if(!msg){ toast(T('חסרה הודעה','Message required')); return; } var url=phone?'https://wa.me/972'+phone.replace(/^0/,'')+' ?text='+encodeURIComponent(msg):'https://wa.me/?text='+encodeURIComponent(msg); window.open(url,'_blank'); };
+  waBtn.textContent='💬 WhatsApp'+(phone?'':T(' (בחירת איש קשר)',' (pick contact)'));
+  waBtn.onclick=function(){ var m=need(); if(!m) return; var n=waNumber(phone); window.open(n?'https://wa.me/'+n+'?text='+encodeURIComponent(m):'https://wa.me/?text='+encodeURIComponent(m),'_blank'); markClientUpdated(caseId); };
+  var smsBtn=document.createElement('button'); smsBtn.className='btn'; smsBtn.textContent='✉️ SMS';
+  smsBtn.onclick=function(){ var m=need(); if(!m) return; location.href='sms:'+(phone||'')+'?body='+encodeURIComponent(m); markClientUpdated(caseId); };
   var mailBtn=document.createElement('button'); mailBtn.className='btn'; mailBtn.textContent='📧 '+T('מייל','Email');
-  mailBtn.onclick=function(){ var msg=msgArea.i.value; if(!msg){ toast(T('חסרה הודעה','Message required')); return; } var mailto='mailto:'+(cl&&cl.email?cl.email:'')+'?subject='+encodeURIComponent(T('עדכון תיק — ','Case Update — ')+c.name)+'&body='+encodeURIComponent(msg); window.open(mailto,'_blank'); };
-  var shareBtn=document.createElement('button'); shareBtn.className='btn'; shareBtn.textContent='📤 '+T('שתף','Share');
-  shareBtn.onclick=function(){ var msg=msgArea.i.value; if(!msg){ toast(T('חסרה הודעה','Message required')); return; } if(navigator.share) navigator.share({title:T('עדכון תיק','Case Update'),text:msg}).catch(function(){}); else { if(navigator.clipboard) navigator.clipboard.writeText(msg); toast(T('הועתק','Copied')); } };
-  sendBtns.appendChild(waBtn); sendBtns.appendChild(mailBtn); sendBtns.appendChild(shareBtn); body.appendChild(sendBtns);
+  mailBtn.onclick=function(){ var m=need(); if(!m) return; window.open('mailto:'+(cl&&cl.email?cl.email:'')+'?subject='+encodeURIComponent(T('עדכון בתיק — ','Case update — ')+c.name)+'&body='+encodeURIComponent(m),'_blank'); markClientUpdated(caseId); };
+  var shareBtn=document.createElement('button'); shareBtn.className='btn'; shareBtn.textContent='📤 '+T('אפליקציה אחרת','Other app');
+  shareBtn.onclick=function(){ var m=need(); if(!m) return; if(navigator.share) navigator.share({title:T('עדכון בתיק','Case update'),text:m}).then(function(){ markClientUpdated(caseId); }).catch(function(){}); else { if(navigator.clipboard) navigator.clipboard.writeText(m); toast(T('הועתק','Copied')); markClientUpdated(caseId); } };
+  sendBtns.appendChild(waBtn); sendBtns.appendChild(smsBtn); sendBtns.appendChild(mailBtn); sendBtns.appendChild(shareBtn); body.appendChild(sendBtns);
+  var hint=document.createElement('div'); hint.style.cssText='font-size:11px;color:var(--txt3);margin-top:8px;'; hint.textContent=T('השליחה מסמנת שהלקוח עודכן היום (משמש את ההתראה "לקוח לא עודכן").','Sending marks the client as updated today.');
+  body.appendChild(hint);
   bx.appendChild(body);
   var ft=document.createElement('div'); ft.className='mo-foot';
   var cl2=document.createElement('button'); cl2.className='btn'; cl2.textContent=T('סגור','Close'); cl2.onclick=function(){ document.body.removeChild(ov); };
   ft.appendChild(cl2); bx.appendChild(ft);
   ov.appendChild(bx); ov.onclick=function(e){ if(e.target===ov) document.body.removeChild(ov); };
   document.body.appendChild(ov);
+}
+
+/* ── איסוף התראות (משמש את מסך ההתראות, דף הבית והסרגל התחתון) ── */
+function maxDate(arr){ var m=''; arr.forEach(function(x){ if(x&&x>m) m=x; }); return m; }
+function caseLastActivity(d,c){
+  var arr=[c.created,c.updated,c.lastClientUpdate];
+  (d.logs||[]).forEach(function(l){ if(l.caseId===c.id) arr.push(l.date,l.created); });
+  (d.events||[]).forEach(function(e){ if(e.caseId===c.id) arr.push(e.created); });
+  (d.docs||[]).forEach(function(x){ if(x.caseId===c.id) arr.push(x.created); });
+  return maxDate(arr)||today();
+}
+function clientLastContact(d,cl){
+  var arr=[cl.lastContact,cl.created];
+  d.cases.forEach(function(c){ if(c.clientId!==cl.id) return; arr.push(c.lastClientUpdate); (d.logs||[]).forEach(function(l){ if(l.caseId===c.id&&(l.type==='meeting'||l.type==='call'||l.type==='email')) arr.push(l.date); }); });
+  return maxDate(arr)||today();
+}
+function daysSince(ds){ return -daysTo(ds); }
+function collectAlerts(d){
+  var items=[];
+  d.events.forEach(function(ev){
+    if(!ev.date||ev.done) return; var dy=daysTo(ev.date);
+    var th=alertCfg.deadlinesBefore&&alertCfg.deadlinesBefore.on?alertCfg.deadlinesBefore.days:7;
+    if(alertCfg.deadlinesBefore&&alertCfg.deadlinesBefore.on&&dy>=0&&dy<=th) items.push({ev:ev,type:'deadline',dy:dy});
+    if(alertCfg.deadlinesOverdue&&alertCfg.deadlinesOverdue.on&&dy<0) items.push({ev:ev,type:'overdue',dy:dy});
+  });
+  d.cases.forEach(function(c){
+    if(c.status==='closed') return;
+    var fnc=caseFinance(d,c);
+    if(alertCfg.feeUnpaid&&alertCfg.feeUnpaid.on&&fnc.balance>0&&c.payStatus!=='paid'){
+      if(daysSince(c.created||today())>=(alertCfg.feeUnpaid.days||14)) items.push({type:'fee',label:T('יתרת שכ"ט — ','Fee balance — ')+c.name,sub:T('יתרה ','Balance ')+fmtMoney(fnc.balance)+(fnc.paid?T(' (שולמו ',' (paid ')+fmtMoney(fnc.paid)+')':''),caseId:c.id});
+    }
+    if(alertCfg.caseNoTouch&&alertCfg.caseNoTouch.on){
+      var la=caseLastActivity(d,c), n=daysSince(la);
+      if(n>=(alertCfg.caseNoTouch.days||14)) items.push({type:'idle',label:T('תיק ללא פעילות — ','Idle case — ')+c.name,sub:T(n+' ימים ללא פעילות (אחרונה: '+fmtDate(la)+')',n+' days idle (last: '+fmtDate(la)+')'),caseId:c.id});
+    }
+  });
+  if(alertCfg.clientNoUpdate&&alertCfg.clientNoUpdate.on){
+    d.clients.forEach(function(cl){
+      var act=d.cases.filter(function(c){ return c.clientId===cl.id&&c.status!=='closed'; }); if(!act.length) return;
+      var lc=clientLastContact(d,cl), n=daysSince(lc);
+      if(n>=(alertCfg.clientNoUpdate.days||30)) items.push({type:'client',label:T('לקוח לא עודכן — ','Client not updated — ')+cl.name,sub:T(n+' ימים מהעדכון האחרון ('+fmtDate(lc)+')',n+' days since last update ('+fmtDate(lc)+')'),caseId:act[0].id});
+    });
+  }
+  loadPendingNotifs();
+  pendingNotifications.forEach(function(n){ items.push({type:'pending',label:n.title,sub:n.body+(n.remindAt?T(' · תזכורת ל-',' · reminder ')+fmtDate(n.remindAt):''),notifId:n.id,caseId:n.caseId}); });
+  return items;
+}
+function setEventDone(evId,val){ var d=getData(); var ev=d.events.find(function(x){ return x.id===evId; }); if(!ev) return; ev.done=!!val; ev.doneAt=val?today():null; saveData(d); }
+/* כשמועד עבר — שאל פעם אחת אם לעדכן לקוח (רק מועדים שעברו ב-14 הימים האחרונים) */
+function promptPastDeadlines(){
+  if(!(alertCfg.notifyOnDeadlinePast&&alertCfg.notifyOnDeadlinePast.on)) return;
+  var d=getData(), changed=false; loadPendingNotifs();
+  d.events.forEach(function(ev){
+    if(!ev.date||ev.done||ev.pastPrompted||!ev.caseId) return;
+    var dy=daysTo(ev.date); if(dy>=0||dy<-14) return;
+    var c=d.cases.find(function(x){ return x.id===ev.caseId; }); if(!c||c.status==='closed') return;
+    ev.pastPrompted=true; changed=true;
+    pendingNotifications.push({id:uid(),type:'client-update',caseId:c.id,title:T('מועד עבר — ','Deadline passed — ')+ev.title,body:T('תיק "'+c.name+'" · '+fmtDate(ev.date)+'. לעדכן את הלקוח?','Case "'+c.name+'" · '+fmtDate(ev.date)+'. Update the client?')});
+  });
+  if(changed){ saveData(d); savePendingNotifs(); }
 }
 
 function renderAlerts(){
@@ -760,23 +877,7 @@ function renderAlerts(){
 
   var el=document.getElementById('alert-list'); el.innerHTML='';
   el.appendChild(mkCardHd(T('התראות פעילות','Active Alerts'),null));
-  var d=getData(); var items=[];
-  d.events.forEach(function(ev){
-    if(!ev.date) return; var dy=daysTo(ev.date);
-    var threshold=alertCfg.deadlinesBefore&&alertCfg.deadlinesBefore.on?alertCfg.deadlinesBefore.days:7;
-    if(alertCfg.deadlinesBefore&&alertCfg.deadlinesBefore.on&&dy>=0&&dy<=threshold) items.push({ev:ev,type:'deadline',dy:dy});
-    if(alertCfg.deadlinesOverdue&&alertCfg.deadlinesOverdue.on&&dy<0) items.push({ev:ev,type:'overdue',dy:dy});
-  });
-  d.cases.forEach(function(c){
-    var fnc=caseFinance(d,c);
-    if(alertCfg.feeUnpaid&&alertCfg.feeUnpaid.on&&c.status!=='closed'&&fnc.balance>0&&c.payStatus!=='paid'){
-      var threshold=alertCfg.feeUnpaid.days||14;
-      var since=Math.round((new Date()-new Date(c.created||today()))/86400000);
-      if(since>=threshold) items.push({type:'fee',label:T('יתרת שכ"ט — ','Fee balance — ')+c.name,sub:T('יתרה ','Balance ')+fmtMoney(fnc.balance)+(fnc.paid?T(' (שולמו ',' (paid ')+fmtMoney(fnc.paid)+')':''),caseId:c.id});
-    }
-  });
-  loadPendingNotifs();
-  pendingNotifications.forEach(function(n){ items.push({type:'pending',label:n.title,sub:n.body,notifId:n.id,caseId:n.caseId}); });
+  var d=getData(); var items=collectAlerts(d);
   if(items.length===0){ el.appendChild(mkEmpty('🔔',T('אין התראות פעילות','No active alerts'),T('כל המועדים בסדר','All clear'))); return; }
   items.forEach(function(it){
     var c=it.ev?d.cases.find(function(x){ return x.id===it.ev.caseId; }):null;
@@ -785,6 +886,8 @@ function renderAlerts(){
     if(it.type==='overdue'){ dot.style.background='var(--rs)'; dot.textContent='🔴'; }
     else if(it.type==='fee'){ dot.style.background='var(--as)'; dot.textContent='💰'; }
     else if(it.type==='pending'){ dot.style.background='var(--acc-s)'; dot.textContent='⏰'; }
+    else if(it.type==='idle'){ dot.style.background='var(--bg3)'; dot.textContent='💤'; }
+    else if(it.type==='client'){ dot.style.background='var(--ps)'; dot.textContent='👤'; }
     else { var d2=it.dy||0; dot.style.background=d2<=2?'var(--rs)':d2<=7?'var(--as)':'var(--acc-s)'; dot.textContent=d2<=2?'🔴':d2<=7?'🟡':'🔵'; }
     var body2=document.createElement('div'); body2.style.flex='1';
     var t=document.createElement('div'); t.style.cssText='font-size:13px;font-weight:600;color:var(--txt);';
@@ -794,12 +897,25 @@ function renderAlerts(){
     body2.appendChild(t); body2.appendChild(s);
     var right=document.createElement('div'); right.style.cssText='display:flex;flex-direction:column;gap:4px;align-items:flex-end;';
     if(it.ev){ var u=urgBadge(it.dy); var badge=document.createElement('span'); badge.className='badge '+u.cls; badge.textContent=u.txt; right.appendChild(badge); }
-    if(it.type==='overdue'||it.type==='fee'){
+    var cid=it.ev?it.ev.caseId:it.caseId;
+    if(it.type==='overdue'||it.type==='deadline'){
+      var doneB=document.createElement('button'); doneB.className='btn btn-sm btn-grn'; doneB.style.fontSize='10px'; doneB.textContent=T('✓ טופל','✓ Done');
+      var eid=it.ev.id; doneB.onclick=function(){ setEventDone(eid,true); toast(T('סומן כטופל','Marked done')); renderAlerts(); renderDash(); };
+      right.appendChild(doneB);
+    }
+    if(cid&&(it.type==='overdue'||it.type==='fee'||it.type==='client'||it.type==='pending')){
       var shareBtn=document.createElement('button'); shareBtn.className='btn btn-sm'; shareBtn.style.fontSize='10px';
       shareBtn.textContent=T('עדכן לקוח','Update Client');
-      var cid=it.ev?it.ev.caseId:it.caseId;
       shareBtn.onclick=function(){ openShareWithClient(cid); };
       right.appendChild(shareBtn);
+    }
+    if(it.type==='idle'){
+      var openB=document.createElement('button'); openB.className='btn btn-sm'; openB.style.fontSize='10px'; openB.textContent=T('פתח תיק','Open case');
+      openB.onclick=function(){ openCaseDetail(cid); }; right.appendChild(openB);
+    }
+    if(it.type==='pending'){
+      var dis=document.createElement('button'); dis.className='btn btn-sm'; dis.style.fontSize='10px'; dis.textContent=T('הסר','Dismiss');
+      var nid=it.notifId; dis.onclick=function(){ removeNotif(nid); renderAlerts(); renderDash(); }; right.appendChild(dis);
     }
     row.appendChild(dot); row.appendChild(body2); row.appendChild(right); el.appendChild(row);
   });
@@ -1015,9 +1131,7 @@ function go(pg){
   var hb=document.getElementById('tb-home-btn');
   if(hb) hb.style.display=(pg==='pg-dash'?'none':'inline-flex');
   buildL2Nav();
-  var d=getData(); var ac=0;
-  d.events.forEach(function(ev){ if(!ev.date) return; var dy=daysTo(ev.date); if(dy>=0&&dy<=7) ac++; });
-  buildBottomNav(ac);
+  buildBottomNav(collectAlerts(getData()).length);
 }
 function onGo(pg){
   if(pg==='pg-dash') renderDash();
@@ -1239,12 +1353,7 @@ function renderDash(){
       if(dy>=0&&dy<=threshold) alertCount++;
     }
   });
-  alertCount=0;
-  d.events.forEach(function(ev){
-    if(!ev.date) return; var dy=daysTo(ev.date);
-    var threshold=(alertCfg.deadlinesBefore&&alertCfg.deadlinesBefore.on)?alertCfg.deadlinesBefore.days:7;
-    if(dy>=0&&dy<=threshold) alertCount++;
-  });
+  alertCount=collectAlerts(d).length;
   var seen={}; try{ var sv=localStorage.getItem(APP+'_seen'); if(sv) seen=JSON.parse(sv); }catch(x){}
   var newClients=d.clients.filter(function(c){ return !seen['cl_'+c.id]; }).length;
   var newCases=d.cases.filter(function(c){ return !seen['cs_'+c.id]; }).length;
@@ -1822,7 +1931,7 @@ function openEditCase(caseId){
     c.court=fCourt.i.value; c.proc=fProc.i.value;
     var newStatus=fStatus.i.value; c.status=newStatus;
     c.serviceDate=fSvc.i.value; c.fee=fFee.i.value; c.payStatus=fPayStatus.i.value;
-    c.paidAmount=fPaid.i.value; c.notes=fNotes.i.value.trim();
+    c.paidAmount=fPaid.i.value; c.notes=fNotes.i.value.trim(); c.updated=today();
     var fe=Number(c.fee||0), pd=Number(c.paidAmount||0);
     if(fe>0&&pd>=fe) c.payStatus='paid'; else if(pd>0&&pd<fe&&c.payStatus!=='overdue') c.payStatus='partial';
     saveData(d); document.body.removeChild(ov); toast(T('נשמר','Saved'));
@@ -1878,13 +1987,19 @@ function mkEvRow(ev,d,showEdit,parentOv){
   row.onmouseenter=function(){ row.style.background='var(--bg3)'; };
   row.onmouseleave=function(){ row.style.background=''; };
   var left=document.createElement('div'); left.style.flex='1'; left.style.minWidth='0';
-  var t=document.createElement('div'); t.style.cssText='font-size:13px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'; t.textContent=ev.title;
+  var t=document.createElement('div'); t.style.cssText='font-size:13px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'+(ev.done?'text-decoration:line-through;opacity:.55;':''); t.textContent=ev.title;
   var s=document.createElement('div'); s.style.cssText='font-size:11px;color:var(--txt3);margin-top:2px;';
   s.textContent=(c?c.name+' · ':'')+fmtDate(ev.date)+(ev.ref?' · '+ev.ref:'');
   left.appendChild(t); left.appendChild(s);
   var right=document.createElement('div'); right.style.cssText='display:flex;align-items:center;gap:6px;flex-shrink:0;';
-  var badge=document.createElement('span'); badge.className='badge '+u.cls; badge.textContent=u.txt; right.appendChild(badge);
+  var badge=document.createElement('span');
+  if(ev.done){ badge.className='badge b-grn'; badge.textContent=T('✓ טופל','✓ Done'); } else { badge.className='badge '+u.cls; badge.textContent=u.txt; }
+  right.appendChild(badge);
   if(showEdit){
+    var dnB=document.createElement('button'); dnB.className='btn btn-sm'; dnB.textContent=ev.done?'↺':'✓'; dnB.title=ev.done?T('בטל סימון טופל','Undo done'):T('סמן כטופל','Mark done');
+    var evId0=ev.id, wasDone=!!ev.done;
+    dnB.onclick=function(e){ e.stopPropagation(); setEventDone(evId0,!wasDone); if(parentOv&&document.body.contains(parentOv)){ document.body.removeChild(parentOv); openCaseDetail(ev.caseId); } else { if(curPg==='pg-dl') renderDl(); if(curPg==='pg-cal') drawCal(); } renderDash(); };
+    right.appendChild(dnB);
     var gcBtn=document.createElement('button'); gcBtn.className='btn btn-sm'; gcBtn.textContent='📅'; gcBtn.title=T('הוסף ליומן Google','Add to Google Calendar');
     var evRef=ev; var cRef=c; gcBtn.onclick=function(e){ e.stopPropagation(); addToGcal(evRef,cRef?cRef.name:''); };
     var eb=document.createElement('button'); eb.className='btn btn-sm'; eb.textContent='✏️';
@@ -2480,6 +2595,7 @@ function openAddDoc(caseId,parentOv,parentBx){
       if(saveData(d)){
         document.body.removeChild(ov);
         toast(T('מסמך נשמר!','Document saved!'));
+        if(alertCfg.notifyOnNewDoc&&alertCfg.notifyOnNewDoc.on){ var cc=d.cases.find(function(x){ return x.id===caseId; }); loadPendingNotifs(); pendingNotifications.push({id:uid(),type:'client-update',caseId:caseId,title:T('מסמך חדש — ','New document — ')+docObj.name,body:T('נוסף מסמך לתיק "'+(cc?cc.name:'')+'". לעדכן את הלקוח?','A document was added to "'+(cc?cc.name:'')+'". Update the client?')}); savePendingNotifs(); setTimeout(checkAndShowNotifications,700); }
         if(parentOv&&document.body.contains(parentOv)) document.body.removeChild(parentOv);
         openCaseDetail(caseId);
       } else { sv.disabled=false; }
@@ -2757,9 +2873,8 @@ function renderSettings(){
   var ic=document.getElementById('set-integrations'); ic.innerHTML='';
   ic.appendChild(mkCardHd(T('חיבורים חיצוניים','Integrations'),null));
   [{icon:'📅',l:'Google Calendar',s:T('סנכרון מועדים','Sync deadlines'),connected:!!gcalToken,a:openGcalModal},
-   {icon:'📁',l:'Google Drive',s:T('גיבוי אוטומטי','Auto backup'),connected:false},
-   {icon:'📧',l:'Gmail',s:T('שליחת תזכורות','Send reminders'),connected:false},
-   {icon:'💬',l:'WhatsApp',s:T('התראות','Alerts'),connected:false}
+   {icon:'🤖',l:T('בינה (AI)','AI'),s:T('עוזר מובנה עם מפתח משלך','Built-in assistant with your key'),connected:aiConnected(),a:function(){ go('pg-ai'); }},
+   {icon:'💬',l:T('WhatsApp / SMS / מייל','WhatsApp / SMS / Email'),s:T('שיתוף עם לקוח מתוך כל תיק','Share from any case'),connected:true,always:true}
   ].forEach(function(it){
     var row=document.createElement('div'); row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--brd);cursor:pointer;transition:background 0.1s;';
     row.onmouseenter=function(){ row.style.background='var(--bg3)'; }; row.onmouseleave=function(){ row.style.background=''; };
@@ -2771,7 +2886,7 @@ function renderSettings(){
     info.appendChild(l); info.appendChild(s); left.appendChild(ic2); left.appendChild(info);
     var badge=document.createElement('span');
     badge.className=it.connected?'badge b-grn':'badge b-gray';
-    badge.textContent=it.connected?T('מחובר','Connected'):T('בקרוב','Soon');
+    badge.textContent=it.always?T('זמין','Available'):it.connected?T('מחובר','Connected'):T('לא מחובר','Not connected');
     row.appendChild(left); row.appendChild(badge);
     if(it.a) row.onclick=it.a;
     ic.appendChild(row);
@@ -3759,13 +3874,13 @@ function init(){
   if(!localStorage.getItem(APP+'_fr')){ if(isNew) showGuide(); else { try{ localStorage.setItem(APP+'_fr','1'); }catch(x){} } }
   renderDash(); applyLbls();
   idbOpen().then(function(){ requestPersist(); return migrateDocs(); }).then(loadAiKeys).then(function(){ applyTheme(); checkAssistantLoaded(); if(curPg==='pg-set') renderSettings(); });
-  setTimeout(checkAndShowNotifications, 1500);
+  promptPastDeadlines(); setTimeout(checkAndShowNotifications, 1500);
   if('serviceWorker' in navigator && location.protocol!=='file:'){
     navigator.serviceWorker.register('sw.js').catch(function(){});
   }
 }
 init();
 </script>
-<script src="appnest-assistant.js?v=3.2.2"></script>
+<script src="appnest-assistant.js?v=3.3.0"></script>
 </body>
 </html>
