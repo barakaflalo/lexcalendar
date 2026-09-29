@@ -2,6 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
+<script>/* Moved to its own address. Redirect ONLY from the old GitHub Pages address (same repo feeds both). */(function(){try{if(location.hostname==='barakaflalo.github.io'){var p=location.pathname.replace(/^\/[^\/]+/,'')||'/';location.replace('https://lexcalendar.pages.dev'+p+location.search+location.hash);}}catch(e){}})();</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta name="theme-color" content="#0d1f3c">
 <meta name="mobile-web-app-capable" content="yes">
@@ -522,7 +523,7 @@ body:not(.ai-on) #appnest-assistant-btn{display:none!important;}
     <div>
       <div class="card" id="set-integrations"></div>
       <button class="btn btn-red btn-full" id="btn-delall" onclick="confirmDelAll()" style="margin-top:12px;"></button>
-      <a href="https://barakaflalo.github.io/appnest" target="_blank" class="an" style="margin-top:10px;">
+      <a href="https://appnest-store.pages.dev" target="_blank" class="an" style="margin-top:10px;">
         <span class="an-l">🏠 AppNest</span>
         <span class="an-r">עוד אפליקציות חינמיות ›</span>
       </a>
@@ -3774,7 +3775,7 @@ function renderAbout(){
    [T('✉️ שלח משוב','✉️ Send feedback'),function(){ location.href='mailto:appnest55@gmail.com?subject='+encodeURIComponent('LexCalendar v'+VER+' — משוב'+(uname?' מ'+uname:'')); }],
    [T('📖 מדריך מלא','📖 Full guide'),function(){ go('pg-help'); }],
    [T('🔒 מדיניות פרטיות','🔒 Privacy policy'),function(){ window.open('privacy_policy.html','_blank'); }],
-   [T('🏠 חנות AppNest — עוד אפליקציות','🏠 AppNest store — more apps'),function(){ window.open('https://barakaflalo.github.io/appnest','_blank'); }]
+   [T('🏠 חנות AppNest — עוד אפליקציות','🏠 AppNest store — more apps'),function(){ window.open('https://appnest-store.pages.dev','_blank'); }]
   ].forEach(function(x){ var b=document.createElement('button'); b.className='btn btn-full'; b.textContent=x[0]; b.onclick=x[1]; acts.appendChild(b); });
   w.appendChild(acts);
 }
