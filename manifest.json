@@ -2,8 +2,8 @@
   "name": "LexCalendar — מערכת ניהול משפטית",
   "short_name": "LexCalendar",
   "description": "מערכת ניהול משפטית לעורכי דין ונוטריונים",
-  "start_url": "/lexcalendar/",
-  "scope": "/lexcalendar/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#0d1f3c",
@@ -31,13 +31,13 @@
       "name": "תיק חדש",
       "short_name": "תיק חדש",
       "description": "פתח תיק חדש",
-      "url": "/lexcalendar/#new-case"
+      "url": "./#new-case"
     },
     {
       "name": "מועדים",
       "short_name": "מועדים",
       "description": "ראה את כל המועדים",
-      "url": "/lexcalendar/#deadlines"
+      "url": "./#deadlines"
     }
   ]
 }
